@@ -6,16 +6,27 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
 export const ColumnLifetimeChart = () => {
-  const { data: columns, isLoading } = useQuery({
+  const { data: columns, isLoading, error } = useQuery({
     queryKey: ['column-lifetime'],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+      
+      console.log('Fetching column lifetime data for user:', user.id);
+      
       const { data, error } = await supabase
         .from('columns')
         .select('*')
+        .eq('user_id', user.id)
         .eq('status', 'active')
         .order('total_injections', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Column lifetime error:', error);
+        throw error;
+      }
+      
+      console.log('Column lifetime data:', data);
       return data;
     },
   });
@@ -37,6 +48,39 @@ export const ColumnLifetimeChart = () => {
     );
   }
 
+  if (error) {
+    console.error('Column lifetime error:', error);
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Column Lifetime Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-red-600">
+            <p>Error loading column data</p>
+            <p className="text-sm text-gray-500">{error.message}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!columns || columns.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Column Lifetime Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-gray-500">
+            <p>No active columns found</p>
+            <p className="text-sm">Add columns to track their lifetime usage</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -44,7 +88,7 @@ export const ColumnLifetimeChart = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {columns?.slice(0, 5).map((column) => {
+          {columns.slice(0, 5).map((column) => {
             const usagePercent = (column.total_injections / column.estimated_lifetime_injections) * 100;
             const getStatusColor = (percent: number) => {
               if (percent >= 90) return 'bg-red-500';

@@ -5,17 +5,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { FlaskConical, Columns, Pill, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 
 export const DashboardStats = () => {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
       
+      console.log('Fetching dashboard stats for user:', user.id);
+      
       const { data, error } = await supabase.rpc('get_dashboard_stats', {
         user_uuid: user.id
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Dashboard stats error:', error);
+        throw error;
+      }
+      
+      console.log('Dashboard stats data:', data);
       return data?.[0];
     },
   });
@@ -30,6 +37,22 @@ export const DashboardStats = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error('Dashboard stats error:', error);
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="col-span-full">
+          <CardContent className="p-6">
+            <div className="text-center text-red-600">
+              <p>Error loading dashboard stats</p>
+              <p className="text-sm text-gray-500">{error.message}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

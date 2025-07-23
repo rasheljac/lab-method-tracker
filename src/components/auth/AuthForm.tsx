@@ -22,24 +22,35 @@ export const AuthForm = () => {
 
     try {
       if (isLogin) {
+        console.log('Attempting to sign in with email:', email);
         const { error } = await signIn(email, password);
-        if (error) throw error;
+        if (error) {
+          console.error('Sign in error:', error);
+          throw error;
+        }
+        console.log('Sign in successful');
         toast({
           title: 'Success',
           description: 'Successfully signed in!',
         });
       } else {
+        console.log('Attempting to sign up with email:', email);
         const { error } = await signUp(email, password, fullName);
-        if (error) throw error;
+        if (error) {
+          console.error('Sign up error:', error);
+          throw error;
+        }
+        console.log('Sign up successful');
         toast({
           title: 'Success',
           description: 'Please check your email to verify your account.',
         });
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'An error occurred during authentication',
         variant: 'destructive',
       });
     } finally {
@@ -69,6 +80,7 @@ export const AuthForm = () => {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
+                  placeholder="Enter your full name"
                 />
               </div>
             )}
@@ -80,6 +92,7 @@ export const AuthForm = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                placeholder="Enter your email"
               />
             </div>
             <div className="space-y-2">
@@ -90,6 +103,8 @@ export const AuthForm = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                placeholder="Enter your password"
+                minLength={6}
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
