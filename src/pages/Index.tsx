@@ -6,6 +6,9 @@ import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { Methods } from '@/components/methods/Methods';
+import { Columns } from '@/components/columns/Columns';
+import { Metabolites } from '@/components/metabolites/Metabolites';
+import { Injections } from '@/components/injections/Injections';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -33,11 +36,11 @@ const Index = () => {
       case 'methods':
         return <Methods />;
       case 'columns':
-        return <div className="p-8 text-center text-gray-500">Columns management coming soon...</div>;
+        return <Columns />;
       case 'metabolites':
-        return <div className="p-8 text-center text-gray-500">Metabolites management coming soon...</div>;
+        return <Metabolites />;
       case 'injections':
-        return <div className="p-8 text-center text-gray-500">Injections tracking coming soon...</div>;
+        return <Injections />;
       default:
         return <Dashboard />;
     }
