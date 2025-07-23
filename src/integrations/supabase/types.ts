@@ -14,16 +14,346 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      columns: {
+        Row: {
+          created_at: string | null
+          dimensions: string | null
+          estimated_lifetime_injections: number | null
+          first_use_date: string | null
+          id: string
+          manufacturer: string | null
+          max_pressure: number | null
+          max_temperature: number | null
+          name: string
+          notes: string | null
+          part_number: string | null
+          particle_size: string | null
+          purchase_date: string | null
+          stationary_phase: string | null
+          status: Database["public"]["Enums"]["column_status"] | null
+          total_injections: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dimensions?: string | null
+          estimated_lifetime_injections?: number | null
+          first_use_date?: string | null
+          id?: string
+          manufacturer?: string | null
+          max_pressure?: number | null
+          max_temperature?: number | null
+          name: string
+          notes?: string | null
+          part_number?: string | null
+          particle_size?: string | null
+          purchase_date?: string | null
+          stationary_phase?: string | null
+          status?: Database["public"]["Enums"]["column_status"] | null
+          total_injections?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dimensions?: string | null
+          estimated_lifetime_injections?: number | null
+          first_use_date?: string | null
+          id?: string
+          manufacturer?: string | null
+          max_pressure?: number | null
+          max_temperature?: number | null
+          name?: string
+          notes?: string | null
+          part_number?: string | null
+          particle_size?: string | null
+          purchase_date?: string | null
+          stationary_phase?: string | null
+          status?: Database["public"]["Enums"]["column_status"] | null
+          total_injections?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      injections: {
+        Row: {
+          column_id: string
+          created_at: string | null
+          id: string
+          injection_date: string | null
+          injection_number: number
+          method_id: string
+          notes: string | null
+          pressure_reading: number | null
+          run_successful: boolean | null
+          sample_id: string | null
+          temperature_reading: number | null
+          user_id: string
+        }
+        Insert: {
+          column_id: string
+          created_at?: string | null
+          id?: string
+          injection_date?: string | null
+          injection_number: number
+          method_id: string
+          notes?: string | null
+          pressure_reading?: number | null
+          run_successful?: boolean | null
+          sample_id?: string | null
+          temperature_reading?: number | null
+          user_id: string
+        }
+        Update: {
+          column_id?: string
+          created_at?: string | null
+          id?: string
+          injection_date?: string | null
+          injection_number?: number
+          method_id?: string
+          notes?: string | null
+          pressure_reading?: number | null
+          run_successful?: boolean | null
+          sample_id?: string | null
+          temperature_reading?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "injections_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "columns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "injections_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metabolites: {
+        Row: {
+          cas_number: string | null
+          created_at: string | null
+          formula: string | null
+          id: string
+          ionization_preference:
+            | Database["public"]["Enums"]["method_type"]
+            | null
+          molecular_weight: number | null
+          name: string
+          notes: string | null
+          retention_time_range: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cas_number?: string | null
+          created_at?: string | null
+          formula?: string | null
+          id?: string
+          ionization_preference?:
+            | Database["public"]["Enums"]["method_type"]
+            | null
+          molecular_weight?: number | null
+          name: string
+          notes?: string | null
+          retention_time_range?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cas_number?: string | null
+          created_at?: string | null
+          formula?: string | null
+          id?: string
+          ionization_preference?:
+            | Database["public"]["Enums"]["method_type"]
+            | null
+          molecular_weight?: number | null
+          name?: string
+          notes?: string | null
+          retention_time_range?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      method_metabolites: {
+        Row: {
+          column_id: string
+          created_at: string | null
+          id: string
+          metabolite_id: string
+          method_id: string
+          notes: string | null
+          peak_area_avg: number | null
+          performance_rating: number | null
+          precision_cv: number | null
+          recovery_percent: number | null
+          retention_time: number | null
+          signal_to_noise: number | null
+        }
+        Insert: {
+          column_id: string
+          created_at?: string | null
+          id?: string
+          metabolite_id: string
+          method_id: string
+          notes?: string | null
+          peak_area_avg?: number | null
+          performance_rating?: number | null
+          precision_cv?: number | null
+          recovery_percent?: number | null
+          retention_time?: number | null
+          signal_to_noise?: number | null
+        }
+        Update: {
+          column_id?: string
+          created_at?: string | null
+          id?: string
+          metabolite_id?: string
+          method_id?: string
+          notes?: string | null
+          peak_area_avg?: number | null
+          performance_rating?: number | null
+          precision_cv?: number | null
+          recovery_percent?: number | null
+          retention_time?: number | null
+          signal_to_noise?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "method_metabolites_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "columns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_metabolites_metabolite_id_fkey"
+            columns: ["metabolite_id"]
+            isOneToOne: false
+            referencedRelation: "metabolites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_metabolites_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      methods: {
+        Row: {
+          column_temperature: number | null
+          created_at: string | null
+          description: string | null
+          flow_rate: number | null
+          gradient_profile: string | null
+          id: string
+          injection_volume: number | null
+          ionization_mode: Database["public"]["Enums"]["method_type"]
+          mobile_phase_a: string | null
+          mobile_phase_b: string | null
+          name: string
+          run_time: number | null
+          sample_type: Database["public"]["Enums"]["sample_type"] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          column_temperature?: number | null
+          created_at?: string | null
+          description?: string | null
+          flow_rate?: number | null
+          gradient_profile?: string | null
+          id?: string
+          injection_volume?: number | null
+          ionization_mode: Database["public"]["Enums"]["method_type"]
+          mobile_phase_a?: string | null
+          mobile_phase_b?: string | null
+          name: string
+          run_time?: number | null
+          sample_type?: Database["public"]["Enums"]["sample_type"] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          column_temperature?: number | null
+          created_at?: string | null
+          description?: string | null
+          flow_rate?: number | null
+          gradient_profile?: string | null
+          id?: string
+          injection_volume?: number | null
+          ionization_mode?: Database["public"]["Enums"]["method_type"]
+          mobile_phase_a?: string | null
+          mobile_phase_b?: string | null
+          name?: string
+          run_time?: number | null
+          sample_type?: Database["public"]["Enums"]["sample_type"] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          institution: string | null
+          lab_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          institution?: string | null
+          lab_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          institution?: string | null
+          lab_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_dashboard_stats: {
+        Args: { user_uuid: string }
+        Returns: {
+          total_methods: number
+          total_columns: number
+          total_metabolites: number
+          active_columns: number
+          total_injections: number
+          avg_column_usage: number
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      column_status: "active" | "retired" | "maintenance"
+      method_type: "positive" | "negative" | "both"
+      sample_type: "plasma" | "serum" | "urine" | "tissue" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +480,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      column_status: ["active", "retired", "maintenance"],
+      method_type: ["positive", "negative", "both"],
+      sample_type: ["plasma", "serum", "urine", "tissue", "other"],
+    },
   },
 } as const
