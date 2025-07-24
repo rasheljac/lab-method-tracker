@@ -80,7 +80,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
         injection_volume: formData.injection_volume ? parseFloat(formData.injection_volume) : null,
         run_time: formData.run_time ? parseInt(formData.run_time) : null,
         sample_type: formData.sample_type || null,
-        gradient_steps: formData.gradient_steps.length > 0 ? formData.gradient_steps : null,
+        gradient_steps: formData.gradient_steps.length > 0 ? formData.gradient_steps as any : null,
         user_id: user.id,
       };
 
@@ -93,7 +93,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
       } else {
         const { error } = await supabase
           .from('methods')
-          .insert([payload]);
+          .insert(payload);
         if (error) throw error;
       }
 
