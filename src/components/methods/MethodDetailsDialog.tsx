@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatDistanceToNow } from 'date-fns';
+import { GradientTable } from './GradientTable';
 
 interface MethodDetailsDialogProps {
   method: any;
@@ -25,7 +26,7 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl font-semibold">{method.name}</DialogTitle>
         </DialogHeader>
@@ -124,13 +125,27 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
               </>
             )}
 
+            {/* Gradient Chart */}
+            {method.gradient_steps && method.gradient_steps.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3">Gradient Chart</h3>
+                  <GradientTable
+                    value={method.gradient_steps}
+                    onChange={() => {}} // Read-only in details view
+                  />
+                </div>
+              </>
+            )}
+
             {/* Description */}
             {method.description && (
               <>
                 <Separator />
                 <div>
                   <h3 className="font-medium text-gray-900 mb-3">Description</h3>
-                  <p className="text-sm text-gray-900">{method.description}</p>
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{method.description}</p>
                 </div>
               </>
             )}
