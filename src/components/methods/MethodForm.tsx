@@ -27,22 +27,24 @@ interface MethodFormProps {
   onClose: () => void;
 }
 
+const initialFormData = {
+  name: '',
+  description: '',
+  ionization_mode: 'positive' as MethodType,
+  flow_rate: '',
+  column_temperature: '',
+  injection_volume: '',
+  run_time: '',
+  mobile_phase_a: '',
+  mobile_phase_b: '',
+  gradient_profile: '',
+  sample_type: '' as SampleType | '',
+  gradient_steps: [] as GradientStep[],
+  column_id: '',
+};
+
 export const MethodForm = ({ method, onClose }: MethodFormProps) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    ionization_mode: 'positive' as MethodType,
-    flow_rate: '',
-    column_temperature: '',
-    injection_volume: '',
-    run_time: '',
-    mobile_phase_a: '',
-    mobile_phase_b: '',
-    gradient_profile: '',
-    sample_type: '' as SampleType | '',
-    gradient_steps: [] as GradientStep[],
-    column_id: '',
-  });
+  const [formData, setFormData] = useState(initialFormData);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -66,84 +68,78 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
     },
   });
 
+  // Helper functions for safe data conversion
+  const safeStringConvert = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    return String(value);
+  };
+
+  const safeGradientSteps = (steps: any): GradientStep[] => {
+    console.log('Processing gradient steps:', steps);
+    if (!steps) return [];
+    if (Array.isArray(steps)) return steps;
+    if (typeof steps === 'string') {
+      try {
+        const parsed = JSON.parse(steps);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const safeSampleType = (sampleType: any): SampleType | '' => {
+    if (!sampleType || sampleType === null || sampleType === undefined) return '';
+    const validTypes: (SampleType | '')[] = ['', 'plasma', 'serum', 'urine', 'tissue', 'other'];
+    return validTypes.includes(sampleType) ? sampleType as (SampleType | '') : '';
+  };
+
+  const processMethodData = (methodData: any) => {
+    if (!methodData) {
+      console.log('No method data, resetting form');
+      setFormData(initialFormData);
+      return;
+    }
+
+    console.log('Processing method data:', methodData);
+    
+    const processedGradientSteps = safeGradientSteps(methodData.gradient_steps);
+    console.log('Processed gradient steps:', processedGradientSteps);
+
+    const newFormData = {
+      name: methodData.name || '',
+      description: methodData.description || '',
+      ionization_mode: (methodData.ionization_mode || 'positive') as MethodType,
+      flow_rate: safeStringConvert(methodData.flow_rate),
+      column_temperature: safeStringConvert(methodData.column_temperature),
+      injection_volume: safeStringConvert(methodData.injection_volume),
+      run_time: safeStringConvert(methodData.run_time),
+      mobile_phase_a: methodData.mobile_phase_a || '',
+      mobile_phase_b: methodData.mobile_phase_b || '',
+      gradient_profile: methodData.gradient_profile || '',
+      sample_type: safeSampleType(methodData.sample_type),
+      gradient_steps: processedGradientSteps,
+      column_id: methodData.column_id || '',
+    };
+    
+    console.log('Setting processed form data:', newFormData);
+    setFormData(newFormData);
+  };
+
+  // Process method data immediately when component mounts or method changes
   useEffect(() => {
     console.log('MethodForm useEffect triggered with method:', method);
-    
-    if (method) {
-      console.log('Method data received:', method);
-      
-      // Helper function to safely convert values to strings with null/undefined checks
-      const safeStringConvert = (value: any): string => {
-        if (value === null || value === undefined) return '';
-        return String(value);
-      };
+    processMethodData(method);
+  }, [method]); // Only depend on method, not the processed data
 
-      // Helper function to safely handle gradient steps
-      const safeGradientSteps = (steps: any): GradientStep[] => {
-        console.log('Processing gradient steps:', steps);
-        if (!steps) return [];
-        if (Array.isArray(steps)) return steps;
-        if (typeof steps === 'string') {
-          try {
-            const parsed = JSON.parse(steps);
-            return Array.isArray(parsed) ? parsed : [];
-          } catch {
-            return [];
-          }
-        }
-        return [];
-      };
-
-      // Helper function to safely handle sample_type
-      const safeSampleType = (sampleType: any): SampleType | '' => {
-        if (!sampleType || sampleType === null || sampleType === undefined) return '';
-        const validTypes: (SampleType | '')[] = ['', 'plasma', 'serum', 'urine', 'tissue', 'other'];
-        return validTypes.includes(sampleType) ? sampleType as (SampleType | '') : '';
-      };
-
-      const processedGradientSteps = safeGradientSteps(method.gradient_steps);
-      console.log('Processed gradient steps:', processedGradientSteps);
-
-      const newFormData = {
-        name: method.name || '',
-        description: method.description || '',
-        ionization_mode: (method.ionization_mode || 'positive') as MethodType,
-        flow_rate: safeStringConvert(method.flow_rate),
-        column_temperature: safeStringConvert(method.column_temperature),
-        injection_volume: safeStringConvert(method.injection_volume),
-        run_time: safeStringConvert(method.run_time),
-        mobile_phase_a: method.mobile_phase_a || '',
-        mobile_phase_b: method.mobile_phase_b || '',
-        gradient_profile: method.gradient_profile || '',
-        sample_type: safeSampleType(method.sample_type),
-        gradient_steps: processedGradientSteps,
-        column_id: method.column_id || '',
-      };
-      
-      console.log('Setting form data to:', newFormData);
-      setFormData(newFormData);
-    } else {
-      // Reset form for new method
-      const resetFormData = {
-        name: '',
-        description: '',
-        ionization_mode: 'positive' as MethodType,
-        flow_rate: '',
-        column_temperature: '',
-        injection_volume: '',
-        run_time: '',
-        mobile_phase_a: '',
-        mobile_phase_b: '',
-        gradient_profile: '',
-        sample_type: '' as SampleType | '',
-        gradient_steps: [] as GradientStep[],
-        column_id: '',
-      };
-      
-      console.log('Resetting form data to:', resetFormData);
-      setFormData(resetFormData);
+  // Add a second useEffect to handle cases where method data might be delayed
+  useEffect(() => {
+    if (method && method.id && formData.name === '') {
+      console.log('Method exists but form is empty, reprocessing...');
+      processMethodData(method);
     }
-  }, [method]);
+  }, [method, formData.name]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
