@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,20 +68,38 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
 
   useEffect(() => {
     if (method) {
+      console.log('Populating form with method data:', method);
       setFormData({
         name: method.name || '',
         description: method.description || '',
         ionization_mode: method.ionization_mode || 'positive',
-        flow_rate: method.flow_rate?.toString() || '',
-        column_temperature: method.column_temperature?.toString() || '',
-        injection_volume: method.injection_volume?.toString() || '',
-        run_time: method.run_time?.toString() || '',
+        flow_rate: method.flow_rate ? method.flow_rate.toString() : '',
+        column_temperature: method.column_temperature ? method.column_temperature.toString() : '',
+        injection_volume: method.injection_volume ? method.injection_volume.toString() : '',
+        run_time: method.run_time ? method.run_time.toString() : '',
         mobile_phase_a: method.mobile_phase_a || '',
         mobile_phase_b: method.mobile_phase_b || '',
         gradient_profile: method.gradient_profile || '',
         sample_type: method.sample_type || '',
-        gradient_steps: method.gradient_steps || [],
+        gradient_steps: Array.isArray(method.gradient_steps) ? method.gradient_steps : [],
         column_id: method.column_id || '',
+      });
+    } else {
+      // Reset form for new method
+      setFormData({
+        name: '',
+        description: '',
+        ionization_mode: 'positive' as MethodType,
+        flow_rate: '',
+        column_temperature: '',
+        injection_volume: '',
+        run_time: '',
+        mobile_phase_a: '',
+        mobile_phase_b: '',
+        gradient_profile: '',
+        sample_type: '' as SampleType,
+        gradient_steps: [],
+        column_id: '',
       });
     }
   }, [method]);
@@ -125,6 +144,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
       });
       onClose();
     } catch (error: any) {
+      console.error('Error saving method:', error);
       toast({
         title: 'Error',
         description: error.message,
