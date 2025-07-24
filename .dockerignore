@@ -5,6 +5,7 @@ npm-debug.log
 .gitignore
 README.md
 .env
+.env.local
 .nyc_output
 coverage
 .eslintrc.js
@@ -15,3 +16,7 @@ dist
 build
 .DS_Store
 Thumbs.db
+*.log
+.next
+.cache
+.parcel-cache

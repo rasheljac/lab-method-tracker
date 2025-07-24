@@ -6,10 +6,9 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY bun.lockb ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies using npm (compatible with bun.lockb)
+RUN npm install
 
 # Copy source code
 COPY . .
