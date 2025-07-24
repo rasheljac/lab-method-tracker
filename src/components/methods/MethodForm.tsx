@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,7 +100,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
       const safeSampleType = (sampleType: any): SampleType | '' => {
         if (!sampleType || sampleType === null || sampleType === undefined) return '';
         const validTypes: (SampleType | '')[] = ['', 'plasma', 'serum', 'urine', 'tissue', 'other'];
-        return validTypes.includes(sampleType) ? sampleType : '';
+        return validTypes.includes(sampleType) ? sampleType as (SampleType | '') : '';
       };
 
       const processedGradientSteps = safeGradientSteps(method.gradient_steps);
@@ -108,7 +109,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
       const newFormData = {
         name: method.name || '',
         description: method.description || '',
-        ionization_mode: method.ionization_mode || 'positive',
+        ionization_mode: (method.ionization_mode || 'positive') as MethodType,
         flow_rate: safeStringConvert(method.flow_rate),
         column_temperature: safeStringConvert(method.column_temperature),
         injection_volume: safeStringConvert(method.injection_volume),
@@ -144,7 +145,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
       console.log('Resetting form data to:', resetFormData);
       setFormData(resetFormData);
     }
-  }, [method]);
+  }, [method]); // Add method to dependency array
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
