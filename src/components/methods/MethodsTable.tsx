@@ -23,7 +23,7 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd, onManageMetabolites }: M
         .from('methods')
         .select(`
           *,
-          columns (
+          columns!methods_column_id_fkey (
             name,
             dimensions,
             manufacturer
