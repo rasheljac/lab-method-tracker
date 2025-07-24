@@ -28,7 +28,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
     temperature_reading: injection?.temperature_reading || '',
     pressure_reading: injection?.pressure_reading || '',
     notes: injection?.notes || '',
-    quantity: 1, // New field for bulk creation
+    quantity: 1,
   });
 
   const [methods, setMethods] = useState<any[]>([]);
@@ -44,24 +44,13 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const [methodsRes, columnsRes, injectionsRes] = await Promise.all([
+        const [methodsRes, columnsRes] = await Promise.all([
           supabase.from('methods').select('id, name').eq('user_id', user.id),
-          supabase.from('columns').select('id, name').eq('user_id', user.id).eq('status', 'active'),
-          supabase.from('injections').select('injection_number').eq('user_id', user.id).order('injection_number', { ascending: false }).limit(1)
+          supabase.from('columns').select('id, name').eq('user_id', user.id).eq('status', 'active')
         ]);
 
         if (methodsRes.data) setMethods(methodsRes.data);
         if (columnsRes.data) setColumns(columnsRes.data);
-        
-        // Calculate next injection number
-        const lastInjection = injectionsRes.data?.[0];
-        const nextNumber = lastInjection ? lastInjection.injection_number + 1 : 1;
-        setNextInjectionNumber(nextNumber);
-        
-        // Set injection number for new injections
-        if (!injection) {
-          setFormData(prev => ({ ...prev, injection_number: nextNumber.toString() }));
-        }
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -69,6 +58,37 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
 
     fetchData();
   }, [injection]);
+
+  // Calculate next injection number when column changes
+  useEffect(() => {
+    const calculateNextInjectionNumber = async () => {
+      if (!formData.column_id) return;
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: lastInjection } = await supabase
+          .from('injections')
+          .select('injection_number')
+          .eq('user_id', user.id)
+          .eq('column_id', formData.column_id)
+          .order('injection_number', { ascending: false })
+          .limit(1);
+
+        const nextNumber = lastInjection && lastInjection.length > 0 ? lastInjection[0].injection_number + 1 : 1;
+        setNextInjectionNumber(nextNumber);
+        
+        if (!injection) {
+          setFormData(prev => ({ ...prev, injection_number: nextNumber.toString() }));
+        }
+      } catch (error) {
+        console.error('Error calculating next injection number:', error);
+      }
+    };
+
+    calculateNextInjectionNumber();
+  }, [formData.column_id, injection]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,6 +184,25 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <Label htmlFor="column_id">Column *</Label>
+                <Select 
+                  value={formData.column_id} 
+                  onValueChange={(value) => setFormData({ ...formData, column_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select column" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {columns.map((column) => (
+                      <SelectItem key={column.id} value={column.id}>
+                        {column.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="injection_number">Injection Number *</Label>
                 <Input
                   id="injection_number"
@@ -171,12 +210,12 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                   value={formData.injection_number}
                   onChange={(e) => setFormData({ ...formData, injection_number: e.target.value })}
                   required
-                  readOnly={!injection} // Make read-only for new injections
+                  readOnly={!injection}
                   className={!injection ? 'bg-gray-50' : ''}
                 />
                 {!injection && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Auto-calculated based on existing injections
+                    Auto-calculated for selected column
                   </p>
                 )}
               </div>
@@ -209,22 +248,6 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                     {methods.map((method) => (
                       <SelectItem key={method.id} value={method.id}>
                         {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="column_id">Column *</Label>
-                <Select value={formData.column_id} onValueChange={(value) => setFormData({ ...formData, column_id: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select column" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {columns.map((column) => (
-                      <SelectItem key={column.id} value={column.id}>
-                        {column.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

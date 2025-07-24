@@ -10,9 +10,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { Database } from '@/integrations/supabase/types';
+import { GradientTable } from './GradientTable';
 
 type MethodType = Database['public']['Enums']['method_type'];
 type SampleType = Database['public']['Enums']['sample_type'];
+
+interface GradientStep {
+  time: number;
+  percent_a: number;
+  percent_b: number;
+  flow_rate: number;
+}
 
 interface MethodFormProps {
   method?: any;
@@ -32,6 +40,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
     mobile_phase_b: '',
     gradient_profile: '',
     sample_type: '' as SampleType,
+    gradient_steps: [] as GradientStep[],
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -51,6 +60,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
         mobile_phase_b: method.mobile_phase_b || '',
         gradient_profile: method.gradient_profile || '',
         sample_type: method.sample_type || '',
+        gradient_steps: method.gradient_steps || [],
       });
     }
   }, [method]);
@@ -70,6 +80,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
         injection_volume: formData.injection_volume ? parseFloat(formData.injection_volume) : null,
         run_time: formData.run_time ? parseInt(formData.run_time) : null,
         sample_type: formData.sample_type || null,
+        gradient_steps: formData.gradient_steps.length > 0 ? formData.gradient_steps : null,
         user_id: user.id,
       };
 
@@ -104,12 +115,12 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
   };
 
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card className="max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>{method ? 'Edit Method' : 'Add New Method'}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Method Name *</Label>
@@ -224,7 +235,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="gradient_profile">Gradient Profile</Label>
+            <Label htmlFor="gradient_profile">Gradient Profile (Text)</Label>
             <Textarea
               id="gradient_profile"
               value={formData.gradient_profile}
@@ -233,6 +244,11 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
               placeholder="e.g., 0-2 min: 95% A, 2-10 min: 95-5% A, 10-12 min: 5% A"
             />
           </div>
+
+          <GradientTable
+            value={formData.gradient_steps}
+            onChange={(steps) => setFormData({ ...formData, gradient_steps: steps })}
+          />
           
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" onClick={onClose}>

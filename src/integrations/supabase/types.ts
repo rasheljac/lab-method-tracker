@@ -259,6 +259,7 @@ export type Database = {
           description: string | null
           flow_rate: number | null
           gradient_profile: string | null
+          gradient_steps: Json | null
           id: string
           injection_volume: number | null
           ionization_mode: Database["public"]["Enums"]["method_type"]
@@ -276,6 +277,7 @@ export type Database = {
           description?: string | null
           flow_rate?: number | null
           gradient_profile?: string | null
+          gradient_steps?: Json | null
           id?: string
           injection_volume?: number | null
           ionization_mode: Database["public"]["Enums"]["method_type"]
@@ -293,6 +295,7 @@ export type Database = {
           description?: string | null
           flow_rate?: number | null
           gradient_profile?: string | null
+          gradient_steps?: Json | null
           id?: string
           injection_volume?: number | null
           ionization_mode?: Database["public"]["Enums"]["method_type"]
