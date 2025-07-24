@@ -1,4 +1,3 @@
-
 version: '3.8'
 
 services:
@@ -7,13 +6,24 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8247:80"
+      - "8082:80"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    volumes:
+      - app_data:/usr/share/nginx/html/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`yourdomain.com`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+
+volumes:
+  app_data:
+    driver: local
