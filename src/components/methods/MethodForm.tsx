@@ -71,8 +71,6 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
     
     if (method) {
       console.log('Method data received:', method);
-      console.log('Method sample_type:', method.sample_type, 'Type:', typeof method.sample_type);
-      console.log('Method gradient_steps:', method.gradient_steps, 'Type:', typeof method.gradient_steps, 'IsArray:', Array.isArray(method.gradient_steps));
       
       // Helper function to safely convert values to strings with null/undefined checks
       const safeStringConvert = (value: any): string => {
