@@ -23,7 +23,7 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd, onManageMetabolites }: M
         .from('methods')
         .select(`
           *,
-          columns (
+          column:columns (
             name,
             dimensions,
             manufacturer
@@ -93,10 +93,10 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd, onManageMetabolites }: M
               <TableRow key={method.id}>
                 <TableCell className="font-medium">{method.name}</TableCell>
                 <TableCell>
-                  {method.columns ? (
+                  {method.column ? (
                     <div className="text-sm">
-                      <div className="font-medium">{method.columns.name}</div>
-                      <div className="text-gray-500">{method.columns.dimensions}</div>
+                      <div className="font-medium">{method.column.name}</div>
+                      <div className="text-gray-500">{method.column.dimensions}</div>
                     </div>
                   ) : (
                     <Badge variant="outline">No Column</Badge>
