@@ -67,26 +67,30 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
   });
 
   useEffect(() => {
+    console.log('MethodForm useEffect triggered with method:', method);
+    
     if (method) {
-      console.log('Populating form with method data:', method);
-      setFormData({
+      const newFormData = {
         name: method.name || '',
         description: method.description || '',
         ionization_mode: method.ionization_mode || 'positive',
-        flow_rate: method.flow_rate ? String(method.flow_rate) : '',
-        column_temperature: method.column_temperature ? String(method.column_temperature) : '',
-        injection_volume: method.injection_volume ? String(method.injection_volume) : '',
-        run_time: method.run_time ? String(method.run_time) : '',
+        flow_rate: method.flow_rate !== null && method.flow_rate !== undefined ? String(method.flow_rate) : '',
+        column_temperature: method.column_temperature !== null && method.column_temperature !== undefined ? String(method.column_temperature) : '',
+        injection_volume: method.injection_volume !== null && method.injection_volume !== undefined ? String(method.injection_volume) : '',
+        run_time: method.run_time !== null && method.run_time !== undefined ? String(method.run_time) : '',
         mobile_phase_a: method.mobile_phase_a || '',
         mobile_phase_b: method.mobile_phase_b || '',
         gradient_profile: method.gradient_profile || '',
         sample_type: method.sample_type || '',
-        gradient_steps: method.gradient_steps || [],
+        gradient_steps: method.gradient_steps && Array.isArray(method.gradient_steps) ? method.gradient_steps : [],
         column_id: method.column_id || '',
-      });
+      };
+      
+      console.log('Setting form data to:', newFormData);
+      setFormData(newFormData);
     } else {
       // Reset form for new method
-      setFormData({
+      const resetFormData = {
         name: '',
         description: '',
         ionization_mode: 'positive' as MethodType,
@@ -100,7 +104,10 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
         sample_type: '',
         gradient_steps: [],
         column_id: '',
-      });
+      };
+      
+      console.log('Resetting form data to:', resetFormData);
+      setFormData(resetFormData);
     }
   }, [method]);
 

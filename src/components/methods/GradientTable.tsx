@@ -17,18 +17,28 @@ interface GradientStep {
 interface GradientTableProps {
   value: GradientStep[];
   onChange: (steps: GradientStep[]) => void;
+  readOnly?: boolean;
 }
 
-export const GradientTable = ({ value, onChange }: GradientTableProps) => {
+export const GradientTable = ({ value, onChange, readOnly = false }: GradientTableProps) => {
   const [steps, setSteps] = useState<GradientStep[]>(value || [
     { time: 0, percent_a: 95, percent_b: 5, flow_rate: 0.3 }
   ]);
 
   useEffect(() => {
-    setSteps(value || [{ time: 0, percent_a: 95, percent_b: 5, flow_rate: 0.3 }]);
-  }, [value]);
+    console.log('GradientTable value prop changed:', value);
+    if (value && Array.isArray(value) && value.length > 0) {
+      setSteps(value);
+    } else if (!readOnly) {
+      setSteps([{ time: 0, percent_a: 95, percent_b: 5, flow_rate: 0.3 }]);
+    } else {
+      setSteps([]);
+    }
+  }, [value, readOnly]);
 
   const handleStepChange = (index: number, field: keyof GradientStep, newValue: string) => {
+    if (readOnly) return;
+    
     const numValue = parseFloat(newValue) || 0;
     const updatedSteps = [...steps];
     updatedSteps[index] = { ...updatedSteps[index], [field]: numValue };
@@ -45,6 +55,8 @@ export const GradientTable = ({ value, onChange }: GradientTableProps) => {
   };
 
   const addStep = () => {
+    if (readOnly) return;
+    
     const lastStep = steps[steps.length - 1];
     const newStep: GradientStep = {
       time: lastStep ? lastStep.time + 1 : 0,
@@ -58,11 +70,11 @@ export const GradientTable = ({ value, onChange }: GradientTableProps) => {
   };
 
   const removeStep = (index: number) => {
-    if (steps.length > 1) {
-      const updatedSteps = steps.filter((_, i) => i !== index);
-      setSteps(updatedSteps);
-      onChange(updatedSteps);
-    }
+    if (readOnly || steps.length <= 1) return;
+    
+    const updatedSteps = steps.filter((_, i) => i !== index);
+    setSteps(updatedSteps);
+    onChange(updatedSteps);
   };
 
   // Prepare data for chart
@@ -75,117 +87,134 @@ export const GradientTable = ({ value, onChange }: GradientTableProps) => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gradient Profile</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-5 gap-2 text-sm font-medium text-gray-700">
-              <div>Time (min)</div>
-              <div>%A</div>
-              <div>%B</div>
-              <div>Flow Rate (mL/min)</div>
-              <div>Actions</div>
-            </div>
-            
-            {steps.map((step, index) => (
-              <div key={index} className="grid grid-cols-5 gap-2 items-center">
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={step.time}
-                  onChange={(e) => handleStepChange(index, 'time', e.target.value)}
-                  className="h-8"
-                />
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={step.percent_a}
-                  onChange={(e) => handleStepChange(index, 'percent_a', e.target.value)}
-                  className="h-8"
-                />
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={step.percent_b}
-                  onChange={(e) => handleStepChange(index, 'percent_b', e.target.value)}
-                  className="h-8"
-                />
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={step.flow_rate}
-                  onChange={(e) => handleStepChange(index, 'flow_rate', e.target.value)}
-                  className="h-8"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeStep(index)}
-                  disabled={steps.length === 1}
-                  className="h-8"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+      {steps.length > 0 && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Gradient Profile</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-5 gap-2 text-sm font-medium text-gray-700">
+                  <div>Time (min)</div>
+                  <div>%A</div>
+                  <div>%B</div>
+                  <div>Flow Rate (mL/min)</div>
+                  {!readOnly && <div>Actions</div>}
+                </div>
+                
+                {steps.map((step, index) => (
+                  <div key={index} className={`grid ${readOnly ? 'grid-cols-4' : 'grid-cols-5'} gap-2 items-center`}>
+                    {readOnly ? (
+                      <>
+                        <div className="text-sm">{step.time}</div>
+                        <div className="text-sm">{step.percent_a}%</div>
+                        <div className="text-sm">{step.percent_b}%</div>
+                        <div className="text-sm">{step.flow_rate}</div>
+                      </>
+                    ) : (
+                      <>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={step.time}
+                          onChange={(e) => handleStepChange(index, 'time', e.target.value)}
+                          className="h-8"
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={step.percent_a}
+                          onChange={(e) => handleStepChange(index, 'percent_a', e.target.value)}
+                          className="h-8"
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={step.percent_b}
+                          onChange={(e) => handleStepChange(index, 'percent_b', e.target.value)}
+                          className="h-8"
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={step.flow_rate}
+                          onChange={(e) => handleStepChange(index, 'flow_rate', e.target.value)}
+                          className="h-8"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeStep(index)}
+                          disabled={steps.length === 1}
+                          className="h-8"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ))}
+                
+                {!readOnly && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addStep}
+                    className="mt-2"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Step
+                  </Button>
+                )}
               </div>
-            ))}
-            
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addStep}
-              className="mt-2"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Step
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Gradient Preview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="time" 
-                  label={{ value: 'Time (min)', position: 'insideBottom', offset: -5 }}
-                />
-                <YAxis 
-                  label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="Mobile Phase A (%)" 
-                  stroke="#3b82f6" 
-                  strokeWidth={2}
-                  dot={{ fill: '#3b82f6' }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="Mobile Phase B (%)" 
-                  stroke="#ef4444" 
-                  strokeWidth={2}
-                  dot={{ fill: '#ef4444' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Gradient Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="time" 
+                      label={{ value: 'Time (min)', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis 
+                      label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Mobile Phase A (%)" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      dot={{ fill: '#3b82f6' }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Mobile Phase B (%)" 
+                      stroke="#ef4444" 
+                      strokeWidth={2}
+                      dot={{ fill: '#ef4444' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 };

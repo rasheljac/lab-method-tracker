@@ -134,6 +134,7 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
                   <GradientTable
                     value={method.gradient_steps}
                     onChange={() => {}} // Read-only in details view
+                    readOnly={true}
                   />
                 </div>
               </>
