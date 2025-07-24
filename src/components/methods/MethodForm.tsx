@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,19 +69,55 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
     console.log('MethodForm useEffect triggered with method:', method);
     
     if (method) {
+      console.log('Method data received:', method);
+      console.log('Method sample_type:', method.sample_type, 'Type:', typeof method.sample_type);
+      console.log('Method gradient_steps:', method.gradient_steps, 'Type:', typeof method.gradient_steps, 'IsArray:', Array.isArray(method.gradient_steps));
+      
+      // Helper function to safely convert values to strings with null/undefined checks
+      const safeStringConvert = (value: any): string => {
+        if (value === null || value === undefined) return '';
+        return String(value);
+      };
+
+      // Helper function to safely handle gradient steps
+      const safeGradientSteps = (steps: any): GradientStep[] => {
+        console.log('Processing gradient steps:', steps);
+        if (!steps) return [];
+        if (Array.isArray(steps)) return steps;
+        if (typeof steps === 'string') {
+          try {
+            const parsed = JSON.parse(steps);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      // Helper function to safely handle sample_type
+      const safeSampleType = (sampleType: any): SampleType | '' => {
+        if (!sampleType || sampleType === null || sampleType === undefined) return '';
+        const validTypes: (SampleType | '')[] = ['', 'plasma', 'serum', 'urine', 'tissue', 'other'];
+        return validTypes.includes(sampleType) ? sampleType : '';
+      };
+
+      const processedGradientSteps = safeGradientSteps(method.gradient_steps);
+      console.log('Processed gradient steps:', processedGradientSteps);
+
       const newFormData = {
         name: method.name || '',
         description: method.description || '',
         ionization_mode: method.ionization_mode || 'positive',
-        flow_rate: method.flow_rate !== null && method.flow_rate !== undefined ? String(method.flow_rate) : '',
-        column_temperature: method.column_temperature !== null && method.column_temperature !== undefined ? String(method.column_temperature) : '',
-        injection_volume: method.injection_volume !== null && method.injection_volume !== undefined ? String(method.injection_volume) : '',
-        run_time: method.run_time !== null && method.run_time !== undefined ? String(method.run_time) : '',
+        flow_rate: safeStringConvert(method.flow_rate),
+        column_temperature: safeStringConvert(method.column_temperature),
+        injection_volume: safeStringConvert(method.injection_volume),
+        run_time: safeStringConvert(method.run_time),
         mobile_phase_a: method.mobile_phase_a || '',
         mobile_phase_b: method.mobile_phase_b || '',
         gradient_profile: method.gradient_profile || '',
-        sample_type: method.sample_type || '',
-        gradient_steps: method.gradient_steps && Array.isArray(method.gradient_steps) ? method.gradient_steps : [],
+        sample_type: safeSampleType(method.sample_type),
+        gradient_steps: processedGradientSteps,
         column_id: method.column_id || '',
       };
       
@@ -101,8 +136,8 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
         mobile_phase_a: '',
         mobile_phase_b: '',
         gradient_profile: '',
-        sample_type: '',
-        gradient_steps: [],
+        sample_type: '' as SampleType | '',
+        gradient_steps: [] as GradientStep[],
         column_id: '',
       };
       
