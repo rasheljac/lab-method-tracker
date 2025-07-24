@@ -24,6 +24,23 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
     return colors[mode as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
+  // Process gradient steps to ensure they're in the correct format
+  const processGradientSteps = (steps: any) => {
+    if (!steps) return [];
+    if (Array.isArray(steps)) return steps;
+    if (typeof steps === 'string') {
+      try {
+        const parsed = JSON.parse(steps);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const gradientSteps = processGradientSteps(method.gradient_steps);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
@@ -126,13 +143,13 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
             )}
 
             {/* Gradient Chart */}
-            {method.gradient_steps && method.gradient_steps.length > 0 && (
+            {gradientSteps.length > 0 && (
               <>
                 <Separator />
                 <div>
                   <h3 className="font-medium text-gray-900 mb-3">Gradient Chart</h3>
                   <GradientTable
-                    value={method.gradient_steps}
+                    value={gradientSteps}
                     onChange={() => {}} // Read-only in details view
                     readOnly={true}
                   />

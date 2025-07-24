@@ -145,7 +145,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
       console.log('Resetting form data to:', resetFormData);
       setFormData(resetFormData);
     }
-  }, [method]); // Add method to dependency array
+  }, [method]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

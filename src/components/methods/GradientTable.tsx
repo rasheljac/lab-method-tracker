@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Plus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -24,15 +23,13 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
   const [steps, setSteps] = useState<GradientStep[]>([]);
 
   useEffect(() => {
-    console.log('GradientTable value prop changed:', value);
-    console.log('GradientTable readOnly:', readOnly);
+    console.log('GradientTable useEffect - value:', value, 'readOnly:', readOnly);
     
-    // Always use the value prop if it's provided and is an array
-    if (value && Array.isArray(value)) {
+    if (value && Array.isArray(value) && value.length > 0) {
       console.log('Setting steps from value prop:', value);
       setSteps(value);
-    } else if (!readOnly && (!value || value.length === 0)) {
-      // Only set default step if not readonly and no value provided
+    } else if (!readOnly) {
+      // Only initialize with default step for new methods (not readonly)
       console.log('Setting default step for new method');
       const defaultSteps = [{ time: 0, percent_a: 95, percent_b: 5, flow_rate: 0.3 }];
       setSteps(defaultSteps);
@@ -42,7 +39,7 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
       console.log('Setting empty steps for readonly mode');
       setSteps([]);
     }
-  }, [value, readOnly]);
+  }, [value, readOnly, onChange]);
 
   const handleStepChange = (index: number, field: keyof GradientStep, newValue: string) => {
     if (readOnly) return;
