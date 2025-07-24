@@ -24,14 +24,6 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
     return colors[mode as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  // Ensure gradient_steps is always an array
-  const gradientSteps = Array.isArray(method.gradient_steps) ? method.gradient_steps : [];
-  const hasGradientSteps = gradientSteps.length > 0;
-
-  console.log('MethodDetailsDialog - method:', method);
-  console.log('MethodDetailsDialog - gradient_steps:', method.gradient_steps);
-  console.log('MethodDetailsDialog - hasGradientSteps:', hasGradientSteps);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
@@ -122,7 +114,7 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
               </div>
             </div>
 
-            {/* Gradient Profile Text */}
+            {/* Gradient Profile */}
             {method.gradient_profile && (
               <>
                 <Separator />
@@ -133,16 +125,20 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
               </>
             )}
 
-            {/* Gradient Chart - Always show if we have the component */}
-            <Separator />
-            <div>
-              <h3 className="font-medium text-gray-900 mb-3">Gradient Chart</h3>
-              <GradientTable
-                value={gradientSteps}
-                onChange={() => {}} // Read-only in details view
-                readOnly={true}
-              />
-            </div>
+            {/* Gradient Chart */}
+            {method.gradient_steps && method.gradient_steps.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-3">Gradient Chart</h3>
+                  <GradientTable
+                    value={method.gradient_steps}
+                    onChange={() => {}} // Read-only in details view
+                    readOnly={true}
+                  />
+                </div>
+              </>
+            )}
 
             {/* Description */}
             {method.description && (

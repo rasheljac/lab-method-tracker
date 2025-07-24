@@ -24,24 +24,25 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
   const [steps, setSteps] = useState<GradientStep[]>([]);
 
   useEffect(() => {
-    console.log('GradientTable useEffect - value:', value);
-    console.log('GradientTable useEffect - readOnly:', readOnly);
+    console.log('GradientTable value prop changed:', value);
+    console.log('GradientTable readOnly:', readOnly);
     
-    if (value && Array.isArray(value) && value.length > 0) {
+    // Always use the value prop if it's provided and is an array
+    if (value && Array.isArray(value)) {
       console.log('Setting steps from value prop:', value);
       setSteps(value);
-    } else if (!readOnly) {
+    } else if (!readOnly && (!value || value.length === 0)) {
       // Only set default step if not readonly and no value provided
       console.log('Setting default step for new method');
       const defaultSteps = [{ time: 0, percent_a: 95, percent_b: 5, flow_rate: 0.3 }];
       setSteps(defaultSteps);
       onChange(defaultSteps);
     } else {
-      // For readonly mode with no data, set empty array
-      console.log('Setting empty steps for readonly mode with no data');
+      // For readonly mode with no data, show empty
+      console.log('Setting empty steps for readonly mode');
       setSteps([]);
     }
-  }, [value, readOnly, onChange]);
+  }, [value, readOnly]);
 
   const handleStepChange = (index: number, field: keyof GradientStep, newValue: string) => {
     if (readOnly) return;
@@ -92,11 +93,8 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
     'Flow Rate (mL/min)': step.flow_rate * 100 // Scale for visibility
   }));
 
-  console.log('GradientTable render - steps:', steps);
-  console.log('GradientTable render - chartData:', chartData);
-
-  // Show empty state only if readonly and no steps
-  if (readOnly && steps.length === 0) {
+  // Don't render anything if no steps and readOnly
+  if (readOnly && (!steps || steps.length === 0)) {
     return (
       <div className="space-y-4">
         <Card>
@@ -115,7 +113,7 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Gradient Steps</CardTitle>
+          <CardTitle>Gradient Profile</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -200,7 +198,6 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
         </CardContent>
       </Card>
 
-      {/* Always show chart if we have steps */}
       {steps.length > 0 && (
         <Card>
           <CardHeader>
