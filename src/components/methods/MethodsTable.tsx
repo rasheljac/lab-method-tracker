@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { Edit, Trash2, Plus, FlaskConical } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { MethodDetailsDialog } from './MethodDetailsDialog';
 
 interface MethodsTableProps {
   onEdit: (method: any) => void;
@@ -16,6 +18,9 @@ interface MethodsTableProps {
 }
 
 export const MethodsTable = ({ onEdit, onDelete, onAdd, onManageMetabolites }: MethodsTableProps) => {
+  const [selectedMethod, setSelectedMethod] = useState<any>(null);
+  const [showMethodDetails, setShowMethodDetails] = useState(false);
+
   const { data: methods, isLoading } = useQuery({
     queryKey: ['methods'],
     queryFn: async () => {
@@ -43,6 +48,11 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd, onManageMetabolites }: M
       return methodsWithColumns;
     },
   });
+
+  const handleMethodClick = (method: any) => {
+    setSelectedMethod(method);
+    setShowMethodDetails(true);
+  };
 
   const getIonizationBadge = (mode: string) => {
     const colors = {
@@ -74,86 +84,101 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd, onManageMetabolites }: M
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Methods</CardTitle>
-        <Button onClick={onAdd} className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Add Method</span>
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Column</TableHead>
-              <TableHead>Ionization Mode</TableHead>
-              <TableHead>Sample Type</TableHead>
-              <TableHead>Flow Rate</TableHead>
-              <TableHead>Run Time</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {methods?.map((method) => (
-              <TableRow key={method.id}>
-                <TableCell className="font-medium">{method.name}</TableCell>
-                <TableCell>
-                  {method.column ? (
-                    <div className="text-sm">
-                      <div className="font-medium">{method.column.name}</div>
-                      <div className="text-gray-500">{method.column.dimensions}</div>
-                    </div>
-                  ) : (
-                    <Badge variant="outline">No Column</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge className={getIonizationBadge(method.ionization_mode)}>
-                    {method.ionization_mode}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{method.sample_type || 'N/A'}</Badge>
-                </TableCell>
-                <TableCell>{method.flow_rate ? `${method.flow_rate} mL/min` : 'N/A'}</TableCell>
-                <TableCell>{method.run_time ? `${method.run_time} min` : 'N/A'}</TableCell>
-                <TableCell>
-                  {formatDistanceToNow(new Date(method.created_at), { addSuffix: true })}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onManageMetabolites(method)}
-                      title="Manage Metabolites"
-                    >
-                      <FlaskConical className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onEdit(method)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onDelete(method.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Methods</CardTitle>
+          <Button onClick={onAdd} className="flex items-center space-x-2">
+            <Plus className="h-4 w-4" />
+            <span>Add Method</span>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Column</TableHead>
+                <TableHead>Ionization Mode</TableHead>
+                <TableHead>Sample Type</TableHead>
+                <TableHead>Flow Rate</TableHead>
+                <TableHead>Run Time</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {methods?.map((method) => (
+                <TableRow key={method.id}>
+                  <TableCell className="font-medium">
+                    <button
+                      onClick={() => handleMethodClick(method)}
+                      className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                    >
+                      {method.name}
+                    </button>
+                  </TableCell>
+                  <TableCell>
+                    {method.column ? (
+                      <div className="text-sm">
+                        <div className="font-medium">{method.column.name}</div>
+                        <div className="text-gray-500">{method.column.dimensions}</div>
+                      </div>
+                    ) : (
+                      <Badge variant="outline">No Column</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getIonizationBadge(method.ionization_mode)}>
+                      {method.ionization_mode}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{method.sample_type || 'N/A'}</Badge>
+                  </TableCell>
+                  <TableCell>{method.flow_rate ? `${method.flow_rate} mL/min` : 'N/A'}</TableCell>
+                  <TableCell>{method.run_time ? `${method.run_time} min` : 'N/A'}</TableCell>
+                  <TableCell>
+                    {formatDistanceToNow(new Date(method.created_at), { addSuffix: true })}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onManageMetabolites(method)}
+                        title="Manage Metabolites"
+                      >
+                        <FlaskConical className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEdit(method)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onDelete(method.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <MethodDetailsDialog
+        method={selectedMethod}
+        open={showMethodDetails}
+        onOpenChange={setShowMethodDetails}
+      />
+    </>
   );
 };

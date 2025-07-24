@@ -1,4 +1,4 @@
-
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ColumnDetailsDialog } from './ColumnDetailsDialog';
 
 interface ColumnsTableProps {
   onEdit: (column: any) => void;
@@ -14,6 +15,9 @@ interface ColumnsTableProps {
 }
 
 export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => {
+  const [selectedColumn, setSelectedColumn] = useState<any>(null);
+  const [showColumnDetails, setShowColumnDetails] = useState(false);
+
   const { data: columns, isLoading, error } = useQuery({
     queryKey: ['columns'],
     queryFn: async () => {
@@ -30,6 +34,11 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
       return data;
     },
   });
+
+  const handleColumnClick = (column: any) => {
+    setSelectedColumn(column);
+    setShowColumnDetails(true);
+  };
 
   if (isLoading) {
     return (
@@ -75,78 +84,93 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Column Inventory</h3>
-        <Button onClick={onAdd}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Column
-        </Button>
+    <>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Column Inventory</h3>
+          <Button onClick={onAdd}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Column
+          </Button>
+        </div>
+
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Manufacturer</TableHead>
+                <TableHead>Dimensions</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Usage</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {columns?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    No columns found. Add your first column to get started.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                columns?.map((column) => {
+                  const usagePercent = (column.total_injections / column.estimated_lifetime_injections) * 100;
+                  return (
+                    <TableRow key={column.id}>
+                      <TableCell className="font-medium">
+                        <button
+                          onClick={() => handleColumnClick(column)}
+                          className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                        >
+                          {column.name}
+                        </button>
+                      </TableCell>
+                      <TableCell>{column.manufacturer}</TableCell>
+                      <TableCell>{column.dimensions}</TableCell>
+                      <TableCell>
+                        <Badge variant={column.status === 'active' ? 'default' : 'secondary'}>
+                          {column.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{column.total_injections} / {column.estimated_lifetime_injections}</div>
+                          <div className="text-gray-500">({usagePercent.toFixed(1)}%)</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onEdit(column)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onDelete(column.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Manufacturer</TableHead>
-              <TableHead>Dimensions</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Usage</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {columns?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                  No columns found. Add your first column to get started.
-                </TableCell>
-              </TableRow>
-            ) : (
-              columns?.map((column) => {
-                const usagePercent = (column.total_injections / column.estimated_lifetime_injections) * 100;
-                return (
-                  <TableRow key={column.id}>
-                    <TableCell className="font-medium">{column.name}</TableCell>
-                    <TableCell>{column.manufacturer}</TableCell>
-                    <TableCell>{column.dimensions}</TableCell>
-                    <TableCell>
-                      <Badge variant={column.status === 'active' ? 'default' : 'secondary'}>
-                        {column.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>{column.total_injections} / {column.estimated_lifetime_injections}</div>
-                        <div className="text-gray-500">({usagePercent.toFixed(1)}%)</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEdit(column)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDelete(column.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+      <ColumnDetailsDialog
+        column={selectedColumn}
+        open={showColumnDetails}
+        onOpenChange={setShowColumnDetails}
+      />
+    </>
   );
 };
