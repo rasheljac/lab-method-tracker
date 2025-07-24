@@ -19,10 +19,10 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd, onManageMetabolites }: M
   const { data: methods, isLoading } = useQuery({
     queryKey: ['methods'],
     queryFn: async () => {
-      // First get all methods
+      // First get all methods with column_id
       const { data: methodsData, error: methodsError } = await supabase
         .from('methods')
-        .select('*')
+        .select('*, column_id')
         .order('created_at', { ascending: false });
       
       if (methodsError) throw methodsError;
@@ -35,10 +35,13 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd, onManageMetabolites }: M
       if (columnsError) throw columnsError;
       
       // Join the data manually
-      const methodsWithColumns = methodsData?.map(method => ({
-        ...method,
-        column: method.column_id ? columnsData?.find(col => col.id === method.column_id) : null
-      }));
+      const methodsWithColumns = methodsData?.map(method => {
+        const methodWithColumn = method as any; // Type assertion to handle column_id
+        return {
+          ...methodWithColumn,
+          column: methodWithColumn.column_id ? columnsData?.find(col => col.id === methodWithColumn.column_id) : null
+        };
+      });
       
       return methodsWithColumns;
     },
