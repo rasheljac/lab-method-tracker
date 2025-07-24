@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Database } from '@/integrations/supabase/types';
 import { GradientTable } from './GradientTable';
 
@@ -41,10 +40,30 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
     gradient_profile: '',
     sample_type: '' as SampleType,
     gradient_steps: [] as GradientStep[],
+    column_id: '',
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch user's columns for selection
+  const { data: columns } = useQuery({
+    queryKey: ['columns'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+      
+      const { data, error } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   useEffect(() => {
     if (method) {
@@ -61,6 +80,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
         gradient_profile: method.gradient_profile || '',
         sample_type: method.sample_type || '',
         gradient_steps: method.gradient_steps || [],
+        column_id: method.column_id || '',
       });
     }
   }, [method]);
@@ -81,6 +101,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
         run_time: formData.run_time ? parseInt(formData.run_time) : null,
         sample_type: formData.sample_type || null,
         gradient_steps: formData.gradient_steps.length > 0 ? formData.gradient_steps as any : null,
+        column_id: formData.column_id || null,
         user_id: user.id,
       };
 
@@ -130,6 +151,24 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="column_id">Column *</Label>
+              <Select
+                value={formData.column_id}
+                onValueChange={(value) => setFormData({ ...formData, column_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a column" />
+                </SelectTrigger>
+                <SelectContent>
+                  {columns?.map((column) => (
+                    <SelectItem key={column.id} value={column.id}>
+                      {column.name} - {column.dimensions}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="ionization_mode">Ionization Mode *</Label>

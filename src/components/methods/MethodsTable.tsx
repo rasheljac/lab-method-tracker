@@ -5,22 +5,30 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus, FlaskConical } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface MethodsTableProps {
   onEdit: (method: any) => void;
   onDelete: (id: string) => void;
   onAdd: () => void;
+  onManageMetabolites: (method: any) => void;
 }
 
-export const MethodsTable = ({ onEdit, onDelete, onAdd }: MethodsTableProps) => {
+export const MethodsTable = ({ onEdit, onDelete, onAdd, onManageMetabolites }: MethodsTableProps) => {
   const { data: methods, isLoading } = useQuery({
     queryKey: ['methods'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('methods')
-        .select('*')
+        .select(`
+          *,
+          columns (
+            name,
+            dimensions,
+            manufacturer
+          )
+        `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -71,6 +79,7 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd }: MethodsTableProps) => 
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Column</TableHead>
               <TableHead>Ionization Mode</TableHead>
               <TableHead>Sample Type</TableHead>
               <TableHead>Flow Rate</TableHead>
@@ -83,6 +92,16 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd }: MethodsTableProps) => 
             {methods?.map((method) => (
               <TableRow key={method.id}>
                 <TableCell className="font-medium">{method.name}</TableCell>
+                <TableCell>
+                  {method.columns ? (
+                    <div className="text-sm">
+                      <div className="font-medium">{method.columns.name}</div>
+                      <div className="text-gray-500">{method.columns.dimensions}</div>
+                    </div>
+                  ) : (
+                    <Badge variant="outline">No Column</Badge>
+                  )}
+                </TableCell>
                 <TableCell>
                   <Badge className={getIonizationBadge(method.ionization_mode)}>
                     {method.ionization_mode}
@@ -98,6 +117,14 @@ export const MethodsTable = ({ onEdit, onDelete, onAdd }: MethodsTableProps) => 
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onManageMetabolites(method)}
+                      title="Manage Metabolites"
+                    >
+                      <FlaskConical className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
