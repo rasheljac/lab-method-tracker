@@ -39,7 +39,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
     mobile_phase_a: '',
     mobile_phase_b: '',
     gradient_profile: '',
-    sample_type: '' as SampleType,
+    sample_type: '' as SampleType | '',
     gradient_steps: [] as GradientStep[],
     column_id: '',
   });
@@ -97,7 +97,7 @@ export const MethodForm = ({ method, onClose }: MethodFormProps) => {
         mobile_phase_a: '',
         mobile_phase_b: '',
         gradient_profile: '',
-        sample_type: '' as SampleType,
+        sample_type: '',
         gradient_steps: [],
         column_id: '',
       });
