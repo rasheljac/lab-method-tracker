@@ -10,6 +10,7 @@ import { Methods } from '@/components/methods/Methods';
 import { Columns } from '@/components/columns/Columns';
 import { Metabolites } from '@/components/metabolites/Metabolites';
 import { Injections } from '@/components/injections/Injections';
+import { AdminPanel } from '@/components/admin/AdminPanel';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -42,6 +43,8 @@ const Index = () => {
         return <Metabolites />;
       case 'injections':
         return <Injections />;
+      case 'admin':
+        return <AdminPanel />;
       default:
         return <Dashboard />;
     }

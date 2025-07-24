@@ -336,11 +336,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_create_user: {
+        Args: {
+          user_email: string
+          user_password: string
+          user_full_name?: string
+          user_role?: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: Json
+      }
       get_dashboard_stats: {
         Args: { user_uuid: string }
         Returns: {
@@ -352,8 +382,20 @@ export type Database = {
           avg_column_usage: number
         }[]
       }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
+      make_first_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
+      app_role: "admin" | "user"
       column_status: "active" | "retired" | "maintenance"
       method_type: "positive" | "negative" | "both"
       sample_type: "plasma" | "serum" | "urine" | "tissue" | "other"
@@ -484,6 +526,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       column_status: ["active", "retired", "maintenance"],
       method_type: ["positive", "negative", "both"],
       sample_type: ["plasma", "serum", "urine", "tissue", "other"],
