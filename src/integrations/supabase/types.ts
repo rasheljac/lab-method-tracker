@@ -254,6 +254,7 @@ export type Database = {
       }
       methods: {
         Row: {
+          column_id: string | null
           column_temperature: number | null
           created_at: string | null
           description: string | null
@@ -272,6 +273,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          column_id?: string | null
           column_temperature?: number | null
           created_at?: string | null
           description?: string | null
@@ -290,6 +292,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          column_id?: string | null
           column_temperature?: number | null
           created_at?: string | null
           description?: string | null
@@ -307,7 +310,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "methods_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "columns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
