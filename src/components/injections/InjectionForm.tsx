@@ -28,11 +28,13 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
     temperature_reading: injection?.temperature_reading || '',
     pressure_reading: injection?.pressure_reading || '',
     notes: injection?.notes || '',
+    quantity: 1, // New field for bulk creation
   });
 
   const [methods, setMethods] = useState<any[]>([]);
   const [columns, setColumns] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [nextInjectionNumber, setNextInjectionNumber] = useState<number>(1);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -42,20 +44,31 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const [methodsRes, columnsRes] = await Promise.all([
+        const [methodsRes, columnsRes, injectionsRes] = await Promise.all([
           supabase.from('methods').select('id, name').eq('user_id', user.id),
-          supabase.from('columns').select('id, name').eq('user_id', user.id).eq('status', 'active')
+          supabase.from('columns').select('id, name').eq('user_id', user.id).eq('status', 'active'),
+          supabase.from('injections').select('injection_number').eq('user_id', user.id).order('injection_number', { ascending: false }).limit(1)
         ]);
 
         if (methodsRes.data) setMethods(methodsRes.data);
         if (columnsRes.data) setColumns(columnsRes.data);
+        
+        // Calculate next injection number
+        const lastInjection = injectionsRes.data?.[0];
+        const nextNumber = lastInjection ? lastInjection.injection_number + 1 : 1;
+        setNextInjectionNumber(nextNumber);
+        
+        // Set injection number for new injections
+        if (!injection) {
+          setFormData(prev => ({ ...prev, injection_number: nextNumber.toString() }));
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
 
     fetchData();
-  }, []);
+  }, [injection]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,16 +78,17 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      const submitData = {
-        ...formData,
-        user_id: user.id,
-        injection_number: parseInt(formData.injection_number),
-        temperature_reading: formData.temperature_reading ? parseInt(formData.temperature_reading) : null,
-        pressure_reading: formData.pressure_reading ? parseInt(formData.pressure_reading) : null,
-        injection_date: new Date(formData.injection_date).toISOString(),
-      };
-
       if (injection) {
+        // Update existing injection
+        const submitData = {
+          ...formData,
+          user_id: user.id,
+          injection_number: parseInt(formData.injection_number),
+          temperature_reading: formData.temperature_reading ? parseInt(formData.temperature_reading) : null,
+          pressure_reading: formData.pressure_reading ? parseInt(formData.pressure_reading) : null,
+          injection_date: new Date(formData.injection_date).toISOString(),
+        };
+
         const { error } = await supabase
           .from('injections')
           .update(submitData)
@@ -87,15 +101,35 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
           description: 'Injection updated successfully!',
         });
       } else {
+        // Create new injection(s)
+        const quantity = parseInt(formData.quantity.toString());
+        const injections = [];
+        
+        for (let i = 0; i < quantity; i++) {
+          const submitData = {
+            user_id: user.id,
+            method_id: formData.method_id,
+            column_id: formData.column_id,
+            sample_id: formData.sample_id,
+            injection_number: nextInjectionNumber + i,
+            temperature_reading: formData.temperature_reading ? parseInt(formData.temperature_reading) : null,
+            pressure_reading: formData.pressure_reading ? parseInt(formData.pressure_reading) : null,
+            injection_date: new Date(formData.injection_date).toISOString(),
+            run_successful: formData.run_successful,
+            notes: formData.notes,
+          };
+          injections.push(submitData);
+        }
+
         const { error } = await supabase
           .from('injections')
-          .insert(submitData);
+          .insert(injections);
         
         if (error) throw error;
         
         toast({
           title: 'Success',
-          description: 'Injection created successfully!',
+          description: `${quantity} injection${quantity > 1 ? 's' : ''} created successfully!`,
         });
       }
 
@@ -137,8 +171,34 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                   value={formData.injection_number}
                   onChange={(e) => setFormData({ ...formData, injection_number: e.target.value })}
                   required
+                  readOnly={!injection} // Make read-only for new injections
+                  className={!injection ? 'bg-gray-50' : ''}
                 />
+                {!injection && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Auto-calculated based on existing injections
+                  </p>
+                )}
               </div>
+              
+              {!injection && (
+                <div>
+                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                    required
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Number of injections to create (1-100)
+                  </p>
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="method_id">Method *</Label>
                 <Select value={formData.method_id} onValueChange={(value) => setFormData({ ...formData, method_id: value })}>
@@ -154,6 +214,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                   </SelectContent>
                 </Select>
               </div>
+              
               <div>
                 <Label htmlFor="column_id">Column *</Label>
                 <Select value={formData.column_id} onValueChange={(value) => setFormData({ ...formData, column_id: value })}>
@@ -169,6 +230,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                   </SelectContent>
                 </Select>
               </div>
+              
               <div>
                 <Label htmlFor="sample_id">Sample ID</Label>
                 <Input
@@ -177,6 +239,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                   onChange={(e) => setFormData({ ...formData, sample_id: e.target.value })}
                 />
               </div>
+              
               <div>
                 <Label htmlFor="injection_date">Injection Date *</Label>
                 <Input
@@ -187,6 +250,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                   required
                 />
               </div>
+              
               <div>
                 <Label htmlFor="temperature_reading">Temperature Reading (°C)</Label>
                 <Input
@@ -196,6 +260,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                   onChange={(e) => setFormData({ ...formData, temperature_reading: e.target.value })}
                 />
               </div>
+              
               <div>
                 <Label htmlFor="pressure_reading">Pressure Reading (bar)</Label>
                 <Input
@@ -205,6 +270,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                   onChange={(e) => setFormData({ ...formData, pressure_reading: e.target.value })}
                 />
               </div>
+              
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="run_successful"
@@ -230,7 +296,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : injection ? 'Update Injection' : 'Create Injection'}
+                {loading ? 'Saving...' : injection ? 'Update Injection' : `Create ${formData.quantity} Injection${formData.quantity > 1 ? 's' : ''}`}
               </Button>
             </div>
           </form>
