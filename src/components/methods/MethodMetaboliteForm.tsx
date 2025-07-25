@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,7 +20,7 @@ interface MethodMetaboliteFormProps {
 export const MethodMetaboliteForm = ({ methodId, relationship, onClose }: MethodMetaboliteFormProps) => {
   const [formData, setFormData] = useState({
     metabolite_id: '',
-    column_id: '',
+    column_ids: [] as string[],
     retention_time: '',
     peak_area_avg: '',
     signal_to_noise: '',
@@ -73,7 +74,7 @@ export const MethodMetaboliteForm = ({ methodId, relationship, onClose }: Method
     if (relationship) {
       setFormData({
         metabolite_id: relationship.metabolite_id || '',
-        column_id: relationship.column_id || '',
+        column_ids: relationship.column_id ? [relationship.column_id] : [],
         retention_time: relationship.retention_time?.toString() || '',
         peak_area_avg: relationship.peak_area_avg?.toString() || '',
         signal_to_noise: relationship.signal_to_noise?.toString() || '',
@@ -85,15 +86,39 @@ export const MethodMetaboliteForm = ({ methodId, relationship, onClose }: Method
     }
   }, [relationship]);
 
+  const handleColumnChange = (columnId: string, checked: boolean) => {
+    if (checked) {
+      setFormData(prev => ({
+        ...prev,
+        column_ids: [...prev.column_ids, columnId]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        column_ids: prev.column_ids.filter(id => id !== columnId)
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const payload = {
+      if (formData.column_ids.length === 0) {
+        toast({
+          title: 'Error',
+          description: 'Please select at least one column',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Create one relationship entry for each selected column
+      const relationships = formData.column_ids.map(columnId => ({
         method_id: methodId,
         metabolite_id: formData.metabolite_id,
-        column_id: formData.column_id,
+        column_id: columnId,
         retention_time: formData.retention_time ? parseFloat(formData.retention_time) : null,
         peak_area_avg: formData.peak_area_avg ? parseFloat(formData.peak_area_avg) : null,
         signal_to_noise: formData.signal_to_noise ? parseFloat(formData.signal_to_noise) : null,
@@ -101,18 +126,20 @@ export const MethodMetaboliteForm = ({ methodId, relationship, onClose }: Method
         precision_cv: formData.precision_cv ? parseFloat(formData.precision_cv) : null,
         performance_rating: formData.performance_rating ? parseInt(formData.performance_rating) : null,
         notes: formData.notes || null,
-      };
+      }));
 
       if (relationship) {
+        // Update existing relationship
         const { error } = await supabase
           .from('method_metabolites')
-          .update(payload)
+          .update(relationships[0])
           .eq('id', relationship.id);
         if (error) throw error;
       } else {
+        // Insert new relationships
         const { error } = await supabase
           .from('method_metabolites')
-          .insert(payload);
+          .insert(relationships);
         if (error) throw error;
       }
 
@@ -161,36 +188,6 @@ export const MethodMetaboliteForm = ({ methodId, relationship, onClose }: Method
             </div>
             
             <div>
-              <Label htmlFor="column_id">Column *</Label>
-              <Select
-                value={formData.column_id}
-                onValueChange={(value) => setFormData({ ...formData, column_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select column" />
-                </SelectTrigger>
-                <SelectContent>
-                  {columns?.map((column) => (
-                    <SelectItem key={column.id} value={column.id}>
-                      {column.name} - {column.dimensions}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="retention_time">Retention Time (min)</Label>
-              <Input
-                id="retention_time"
-                type="number"
-                step="0.01"
-                value={formData.retention_time}
-                onChange={(e) => setFormData({ ...formData, retention_time: e.target.value })}
-              />
-            </div>
-
-            <div>
               <Label htmlFor="performance_rating">Performance Rating (1-5)</Label>
               <Select
                 value={formData.performance_rating}
@@ -207,6 +204,40 @@ export const MethodMetaboliteForm = ({ methodId, relationship, onClose }: Method
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label>Columns *</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto border rounded-md p-3">
+              {columns?.map((column) => (
+                <div key={column.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={column.id}
+                    checked={formData.column_ids.includes(column.id)}
+                    onCheckedChange={(checked) => handleColumnChange(column.id, checked as boolean)}
+                  />
+                  <Label
+                    htmlFor={column.id}
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    {column.name} - {column.dimensions}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="retention_time">Retention Time (min)</Label>
+              <Input
+                id="retention_time"
+                type="number"
+                step="0.01"
+                value={formData.retention_time}
+                onChange={(e) => setFormData({ ...formData, retention_time: e.target.value })}
+              />
             </div>
 
             <div>

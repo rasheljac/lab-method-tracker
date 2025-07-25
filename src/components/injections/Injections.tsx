@@ -24,10 +24,10 @@ export const Injections = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      // First, get the injection to find its batch_id
+      // First, get the injection to find its batch_id and column_id
       const { data: injection, error: fetchError } = await supabase
         .from('injections')
-        .select('batch_id')
+        .select('batch_id, column_id')
         .eq('id', id)
         .single();
       
@@ -40,6 +40,31 @@ export const Injections = () => {
         .eq('id', id);
       
       if (deleteError) throw deleteError;
+      
+      // Update column injection count
+      if (injection.column_id) {
+        const { error: columnUpdateError } = await supabase
+          .from('columns')
+          .update({ total_injections: supabase.rpc('decrement_column_injections', { column_id: injection.column_id }) })
+          .eq('id', injection.column_id);
+        
+        if (columnUpdateError) {
+          // Fallback: manually decrement the count
+          const { data: columnData, error: columnFetchError } = await supabase
+            .from('columns')
+            .select('total_injections')
+            .eq('id', injection.column_id)
+            .single();
+          
+          if (!columnFetchError && columnData) {
+            const newCount = Math.max(0, columnData.total_injections - 1);
+            await supabase
+              .from('columns')
+              .update({ total_injections: newCount })
+              .eq('id', injection.column_id);
+          }
+        }
+      }
       
       // Update batch_size for remaining injections in the same batch
       if (injection.batch_id) {
@@ -64,6 +89,9 @@ export const Injections = () => {
       }
       
       await queryClient.invalidateQueries({ queryKey: ['injections'] });
+      await queryClient.invalidateQueries({ queryKey: ['column-lifetime'] });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      
       toast({
         title: 'Success',
         description: 'Injection deleted successfully!',
