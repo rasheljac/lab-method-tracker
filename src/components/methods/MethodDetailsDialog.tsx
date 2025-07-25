@@ -26,6 +26,7 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
 
   // Process gradient steps to ensure they're in the correct format
   const processGradientSteps = (steps: any) => {
+    console.log('Processing gradient steps:', steps);
     if (!steps) return [];
     if (Array.isArray(steps)) return steps;
     if (typeof steps === 'string') {
@@ -40,6 +41,7 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
   };
 
   const gradientSteps = processGradientSteps(method.gradient_steps);
+  console.log('Processed gradient steps:', gradientSteps);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -142,17 +144,19 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
               </>
             )}
 
-            {/* Gradient Chart */}
+            {/* Gradient Chart - Always show if there are steps */}
             {gradientSteps.length > 0 && (
               <>
                 <Separator />
                 <div>
                   <h3 className="font-medium text-gray-900 mb-3">Gradient Chart</h3>
-                  <GradientTable
-                    value={gradientSteps}
-                    onChange={() => {}} // Read-only in details view
-                    readOnly={true}
-                  />
+                  <div className="w-full">
+                    <GradientTable
+                      value={gradientSteps}
+                      onChange={() => {}} // Read-only in details view
+                      readOnly={true}
+                    />
+                  </div>
                 </div>
               </>
             )}

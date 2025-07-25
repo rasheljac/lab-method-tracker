@@ -90,7 +90,7 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
     'Flow Rate (mL/min)': step.flow_rate * 100 // Scale for visibility
   }));
 
-  // Don't render anything if no steps and readOnly
+  // For readonly mode, always show the table even if empty
   if (readOnly && (!steps || steps.length === 0)) {
     return (
       <div className="space-y-4">
@@ -195,13 +195,14 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
         </CardContent>
       </Card>
 
+      {/* Always show chart if there are steps */}
       {steps.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Gradient Preview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />

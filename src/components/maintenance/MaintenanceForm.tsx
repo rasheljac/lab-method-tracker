@@ -1,16 +1,35 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/integrations/supabase/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CalendarIcon, ArrowLeft } from 'lucide-react';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
+
+const maintenanceSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  maintenance_type: z.enum(['routine', 'repair', 'calibration', 'cleaning', 'other']),
+  maintenance_date: z.date(),
+  performed_by: z.string().optional(),
+  next_maintenance_date: z.date().optional(),
+  cost: z.number().optional(),
+  notes: z.string().optional(),
+});
+
+type MaintenanceFormData = z.infer<typeof maintenanceSchema>;
 
 interface MaintenanceFormProps {
   maintenance?: any;
@@ -18,48 +37,62 @@ interface MaintenanceFormProps {
 }
 
 export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) => {
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
-    defaultValues: {
-      title: maintenance?.title || '',
-      description: maintenance?.description || '',
-      maintenance_type: maintenance?.maintenance_type || 'routine',
-      maintenance_date: maintenance?.maintenance_date 
-        ? new Date(maintenance.maintenance_date).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0],
-      performed_by: maintenance?.performed_by || '',
-      next_maintenance_date: maintenance?.next_maintenance_date 
-        ? new Date(maintenance.next_maintenance_date).toISOString().split('T')[0]
-        : '',
-      cost: maintenance?.cost || '',
-      notes: maintenance?.notes || '',
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<MaintenanceFormData>({
+    resolver: zodResolver(maintenanceSchema),
+    defaultValues: maintenance ? {
+      title: maintenance.title,
+      description: maintenance.description || '',
+      maintenance_type: maintenance.maintenance_type,
+      maintenance_date: new Date(maintenance.maintenance_date),
+      performed_by: maintenance.performed_by || '',
+      next_maintenance_date: maintenance.next_maintenance_date ? new Date(maintenance.next_maintenance_date) : undefined,
+      cost: maintenance.cost || undefined,
+      notes: maintenance.notes || '',
+    } : {
+      title: '',
+      description: '',
+      maintenance_type: 'routine',
+      maintenance_date: new Date(),
+      performed_by: '',
+      next_maintenance_date: undefined,
+      cost: undefined,
+      notes: '',
     },
   });
 
-  const maintenanceType = watch('maintenance_type');
+  const maintenanceDate = watch('maintenance_date');
+  const nextMaintenanceDate = watch('next_maintenance_date');
 
-  const onSubmit = async (data: any) => {
-    setLoading(true);
+  const onSubmit = async (data: MaintenanceFormData) => {
+    setIsSubmitting(true);
     try {
-      const submitData = {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const maintenanceData = {
         ...data,
-        user_id: (await supabase.auth.getUser()).data.user?.id,
-        cost: data.cost ? parseFloat(data.cost) : null,
-        next_maintenance_date: data.next_maintenance_date || null,
-        updated_at: new Date().toISOString(),
+        user_id: user.id,
+        maintenance_date: data.maintenance_date.toISOString(),
+        next_maintenance_date: data.next_maintenance_date?.toISOString() || null,
       };
 
       if (maintenance) {
         const { error } = await supabase
           .from('maintenance_logs')
-          .update(submitData)
+          .update(maintenanceData)
           .eq('id', maintenance.id);
         
         if (error) throw error;
-        
         toast({
           title: 'Success',
           description: 'Maintenance log updated successfully!',
@@ -67,18 +100,16 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
       } else {
         const { error } = await supabase
           .from('maintenance_logs')
-          .insert(submitData);
+          .insert([maintenanceData]);
         
         if (error) throw error;
-        
         toast({
           title: 'Success',
           description: 'Maintenance log created successfully!',
         });
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['maintenance-logs'] });
-      await queryClient.invalidateQueries({ queryKey: ['recent-activity'] });
+      await queryClient.invalidateQueries({ queryKey: ['maintenance_logs'] });
       onClose();
     } catch (error: any) {
       toast({
@@ -87,30 +118,25 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center space-x-4">
         <Button variant="ghost" onClick={onClose}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Maintenance Logs
+          Back to Maintenance
         </Button>
+        <h2 className="text-2xl font-bold">
+          {maintenance ? 'Edit Maintenance Log' : 'Add Maintenance Log'}
+        </h2>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            {maintenance ? 'Edit Maintenance Log' : 'Add New Maintenance Log'}
-          </CardTitle>
-          <CardDescription>
-            {maintenance 
-              ? 'Update the maintenance log details'
-              : 'Record maintenance activities for your mass spectrometer'
-            }
-          </CardDescription>
+          <CardTitle>Maintenance Details</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -119,19 +145,19 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
                 <Label htmlFor="title">Title *</Label>
                 <Input
                   id="title"
-                  {...register('title', { required: 'Title is required' })}
-                  placeholder="e.g., Routine cleaning"
+                  {...register('title')}
+                  placeholder="Enter maintenance title"
                 />
                 {errors.title && (
-                  <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>
+                  <p className="text-sm text-red-500">{errors.title.message}</p>
                 )}
               </div>
 
               <div>
                 <Label htmlFor="maintenance_type">Type *</Label>
                 <Select
-                  value={maintenanceType}
-                  onValueChange={(value) => setValue('maintenance_type', value)}
+                  onValueChange={(value) => setValue('maintenance_type', value as any)}
+                  defaultValue={maintenance?.maintenance_type || 'routine'}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select maintenance type" />
@@ -144,6 +170,9 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.maintenance_type && (
+                  <p className="text-sm text-red-500">{errors.maintenance_type.message}</p>
+                )}
               </div>
             </div>
 
@@ -152,53 +181,99 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
               <Textarea
                 id="description"
                 {...register('description')}
-                placeholder="Describe the maintenance activity..."
+                placeholder="Enter maintenance description"
                 rows={3}
               />
+              {errors.description && (
+                <p className="text-sm text-red-500">{errors.description.message}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="maintenance_date">Maintenance Date *</Label>
-                <Input
-                  id="maintenance_date"
-                  type="date"
-                  {...register('maintenance_date', { required: 'Maintenance date is required' })}
-                />
+                <Label>Maintenance Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !maintenanceDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {maintenanceDate ? format(maintenanceDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={maintenanceDate}
+                      onSelect={(date) => setValue('maintenance_date', date || new Date())}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 {errors.maintenance_date && (
-                  <p className="text-red-500 text-sm mt-1">{errors.maintenance_date.message}</p>
+                  <p className="text-sm text-red-500">{errors.maintenance_date.message}</p>
                 )}
               </div>
 
+              <div>
+                <Label>Next Maintenance Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !nextMaintenanceDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {nextMaintenanceDate ? format(nextMaintenanceDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={nextMaintenanceDate}
+                      onSelect={(date) => setValue('next_maintenance_date', date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors.next_maintenance_date && (
+                  <p className="text-sm text-red-500">{errors.next_maintenance_date.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="performed_by">Performed By</Label>
                 <Input
                   id="performed_by"
                   {...register('performed_by')}
-                  placeholder="Person who performed maintenance"
+                  placeholder="Enter technician name"
                 />
+                {errors.performed_by && (
+                  <p className="text-sm text-red-500">{errors.performed_by.message}</p>
+                )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="cost">Cost ($)</Label>
+                <Label htmlFor="cost">Cost</Label>
                 <Input
                   id="cost"
                   type="number"
                   step="0.01"
-                  {...register('cost')}
-                  placeholder="0.00"
+                  {...register('cost', { valueAsNumber: true })}
+                  placeholder="Enter cost"
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="next_maintenance_date">Next Maintenance Date</Label>
-                <Input
-                  id="next_maintenance_date"
-                  type="date"
-                  {...register('next_maintenance_date')}
-                />
+                {errors.cost && (
+                  <p className="text-sm text-red-500">{errors.cost.message}</p>
+                )}
               </div>
             </div>
 
@@ -208,16 +283,19 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
                 id="notes"
                 {...register('notes')}
                 placeholder="Additional notes..."
-                rows={3}
+                rows={4}
               />
+              {errors.notes && (
+                <p className="text-sm text-red-500">{errors.notes.message}</p>
+              )}
             </div>
 
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : maintenance ? 'Update' : 'Create'}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : maintenance ? 'Update' : 'Create'}
               </Button>
             </div>
           </form>
