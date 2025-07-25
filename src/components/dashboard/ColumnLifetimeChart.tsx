@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,8 +26,17 @@ export const ColumnLifetimeChart = () => {
       }
       
       console.log('Column lifetime data:', data);
+      
+      // Log each column's injection count for debugging
+      data?.forEach(column => {
+        console.log(`Column ${column.name}: ${column.total_injections} injections`);
+      });
+      
       return data;
     },
+    // Reduce cache time to ensure fresh data
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   if (isLoading) {

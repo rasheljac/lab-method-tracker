@@ -58,6 +58,8 @@ export const Injections = () => {
           
           if (columnUpdateError) {
             console.error('Error updating column injection count:', columnUpdateError);
+          } else {
+            console.log(`Updated column ${injection.column_id} injection count to ${newCount}`);
           }
         }
       }
@@ -84,6 +86,7 @@ export const Injections = () => {
         }
       }
       
+      // Invalidate queries to refresh the UI
       await queryClient.invalidateQueries({ queryKey: ['injections'] });
       await queryClient.invalidateQueries({ queryKey: ['column-lifetime'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
@@ -93,6 +96,7 @@ export const Injections = () => {
         description: 'Injection deleted successfully!',
       });
     } catch (error: any) {
+      console.error('Error deleting injection:', error);
       toast({
         title: 'Error',
         description: error.message,
