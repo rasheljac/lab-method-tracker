@@ -24,6 +24,8 @@ export const Injections = () => {
 
   const handleDelete = async (id: string) => {
     try {
+      console.log('Deleting injection with ID:', id);
+      
       // First, get the injection to find its batch_id and column_id
       const { data: injection, error: fetchError } = await supabase
         .from('injections')
@@ -33,6 +35,8 @@ export const Injections = () => {
       
       if (fetchError) throw fetchError;
       
+      console.log('Injection to delete:', injection);
+      
       // Delete the injection
       const { error: deleteError } = await supabase
         .from('injections')
@@ -41,31 +45,45 @@ export const Injections = () => {
       
       if (deleteError) throw deleteError;
       
+      console.log('Injection deleted successfully');
+      
       // Update column injection count by decrementing it
       if (injection.column_id) {
+        console.log('Updating column injection count for column:', injection.column_id);
+        
+        // Get current column data
         const { data: columnData, error: columnFetchError } = await supabase
           .from('columns')
-          .select('total_injections')
+          .select('total_injections, name')
           .eq('id', injection.column_id)
           .single();
         
-        if (!columnFetchError && columnData) {
+        if (columnFetchError) {
+          console.error('Error fetching column data:', columnFetchError);
+        } else if (columnData) {
           const newCount = Math.max(0, columnData.total_injections - 1);
+          console.log(`Updating column ${columnData.name} from ${columnData.total_injections} to ${newCount} injections`);
+          
           const { error: columnUpdateError } = await supabase
             .from('columns')
-            .update({ total_injections: newCount })
+            .update({ 
+              total_injections: newCount,
+              updated_at: new Date().toISOString()
+            })
             .eq('id', injection.column_id);
           
           if (columnUpdateError) {
             console.error('Error updating column injection count:', columnUpdateError);
           } else {
-            console.log(`Updated column ${injection.column_id} injection count to ${newCount}`);
+            console.log(`Successfully updated column ${columnData.name} injection count to ${newCount}`);
           }
         }
       }
       
       // Update batch_size for remaining injections in the same batch
       if (injection.batch_id) {
+        console.log('Updating batch size for batch:', injection.batch_id);
+        
         const { data: remainingInjections, error: countError } = await supabase
           .from('injections')
           .select('id')
@@ -74,6 +92,7 @@ export const Injections = () => {
         if (countError) throw countError;
         
         const newBatchSize = remainingInjections.length;
+        console.log(`Updating batch size to ${newBatchSize} for batch ${injection.batch_id}`);
         
         // Update batch_size for all remaining injections in the batch
         if (newBatchSize > 0) {
@@ -86,10 +105,16 @@ export const Injections = () => {
         }
       }
       
-      // Invalidate queries to refresh the UI
+      // Invalidate all relevant queries to refresh the UI
+      console.log('Invalidating queries to refresh UI');
       await queryClient.invalidateQueries({ queryKey: ['injections'] });
       await queryClient.invalidateQueries({ queryKey: ['column-lifetime'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      await queryClient.invalidateQueries({ queryKey: ['columns'] });
+      
+      // Force refetch to ensure fresh data
+      await queryClient.refetchQueries({ queryKey: ['column-lifetime'] });
+      await queryClient.refetchQueries({ queryKey: ['dashboard-stats'] });
       
       toast({
         title: 'Success',

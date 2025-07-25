@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,14 +30,16 @@ export const ColumnLifetimeChart = () => {
       
       // Log each column's injection count for debugging
       data?.forEach(column => {
-        console.log(`Column ${column.name}: ${column.total_injections} injections`);
+        console.log(`Column ${column.name}: ${column.total_injections} injections (${((column.total_injections / column.estimated_lifetime_injections) * 100).toFixed(1)}% used)`);
       });
       
       return data;
     },
-    // Reduce cache time to ensure fresh data
+    // Force fresh data on every query
     staleTime: 0,
     gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {
