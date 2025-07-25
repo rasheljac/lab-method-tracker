@@ -53,7 +53,7 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
             injection_date: injection.injection_date,
             method_name: injection.methods?.name || 'Unknown',
             column_name: injection.columns?.name || 'Unknown',
-            batch_size: injection.batch_size,
+            actual_batch_size: 1, // Count actual injections
             min_injection_number: injection.injection_number,
             max_injection_number: injection.injection_number,
             run_successful: injection.run_successful,
@@ -63,6 +63,11 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
         
         return acc;
       }, []);
+      
+      // Update actual batch sizes
+      batches.forEach(batch => {
+        batch.actual_batch_size = batch.injections.length;
+      });
       
       // Sort batches by date
       return batches.sort((a, b) => new Date(b.injection_date).getTime() - new Date(a.injection_date).getTime());
@@ -119,7 +124,7 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
   }
 
   const handleDeleteBatch = async (batch: any) => {
-    if (!confirm(`Are you sure you want to delete this batch of ${batch.batch_size} injections?`)) return;
+    if (!confirm(`Are you sure you want to delete this batch of ${batch.actual_batch_size} injections?`)) return;
     
     // Delete all injections in the batch
     for (const injection of batch.injections) {
@@ -179,7 +184,7 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
                     {new Date(batch.injection_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{batch.batch_size} injections</Badge>
+                    <Badge variant="outline">{batch.actual_batch_size} injections</Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={batch.run_successful ? 'default' : 'destructive'}>

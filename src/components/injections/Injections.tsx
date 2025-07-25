@@ -24,12 +24,44 @@ export const Injections = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
+      // First, get the injection to find its batch_id
+      const { data: injection, error: fetchError } = await supabase
+        .from('injections')
+        .select('batch_id')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Delete the injection
+      const { error: deleteError } = await supabase
         .from('injections')
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+      
+      // Update batch_size for remaining injections in the same batch
+      if (injection.batch_id) {
+        const { data: remainingInjections, error: countError } = await supabase
+          .from('injections')
+          .select('id')
+          .eq('batch_id', injection.batch_id);
+        
+        if (countError) throw countError;
+        
+        const newBatchSize = remainingInjections.length;
+        
+        // Update batch_size for all remaining injections in the batch
+        if (newBatchSize > 0) {
+          const { error: updateError } = await supabase
+            .from('injections')
+            .update({ batch_size: newBatchSize })
+            .eq('batch_id', injection.batch_id);
+          
+          if (updateError) throw updateError;
+        }
+      }
       
       await queryClient.invalidateQueries({ queryKey: ['injections'] });
       toast({
