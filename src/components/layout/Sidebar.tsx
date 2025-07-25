@@ -1,16 +1,5 @@
-
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
-import { 
-  LayoutDashboard, 
-  FlaskConical, 
-  Columns3, 
-  Atom, 
-  Syringe, 
-  LogOut,
-  Settings 
-} from 'lucide-react';
+import { BarChart3, FlaskConical, Columns, Pill, Activity, Shield, Wrench } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -18,60 +7,41 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
-  const { signOut } = useAuth();
   const { isAdmin } = useUserRole();
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  const navigationItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'methods', label: 'Methods', icon: FlaskConical },
-    { id: 'columns', label: 'Columns', icon: Columns3 },
-    { id: 'metabolites', label: 'Metabolites', icon: Atom },
-    { id: 'injections', label: 'Injections', icon: Syringe },
+    { id: 'columns', label: 'Columns', icon: Columns },
+    { id: 'metabolites', label: 'Metabolites', icon: Pill },
+    { id: 'injections', label: 'Injections', icon: Activity },
+    { id: 'maintenance', label: 'Maintenance', icon: Wrench },
   ];
 
-  // Add admin panel to navigation if user is admin
+  // Add admin panel if user is admin
   if (isAdmin) {
-    navigationItems.push({ id: 'admin', label: 'Admin Panel', icon: Settings });
+    menuItems.push({ id: 'admin', label: 'Admin', icon: Shield });
   }
 
   return (
-    <aside className="w-64 bg-white shadow-sm border-r border-gray-200">
-      <div className="p-4">
-        <h2 className="text-lg font-semibold text-gray-800">Navigation</h2>
+    <div className="w-64 bg-white shadow-lg">
+      <div className="p-6">
+        <h1 className="text-xl font-bold text-gray-800">LCMS Tracker</h1>
       </div>
-      <nav className="px-4 pb-4">
-        <ul className="space-y-2">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <li key={item.id}>
-                <Button
-                  variant={activeTab === item.id ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => onTabChange(item.id)}
-                >
-                  <Icon className="mr-2 h-4 w-4" />
-                  {item.label}
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleSignOut}
+      <nav className="mt-6">
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onTabChange(item.id)}
+            className={`w-full flex items-center px-6 py-3 text-left hover:bg-gray-50 ${
+              activeTab === item.id ? 'border-r-2 border-blue-500 bg-blue-50 text-blue-600' : 'text-gray-600'
+            }`}
           >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
+            <item.icon className="h-5 w-5 mr-3" />
+            {item.label}
+          </button>
+        ))}
       </nav>
-    </aside>
+    </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthForm } from '@/components/auth/AuthForm';
@@ -10,6 +9,7 @@ import { Methods } from '@/components/methods/Methods';
 import { Columns } from '@/components/columns/Columns';
 import { Metabolites } from '@/components/metabolites/Metabolites';
 import { Injections } from '@/components/injections/Injections';
+import { Maintenance } from '@/components/maintenance/Maintenance';
 import { AdminPanel } from '@/components/admin/AdminPanel';
 
 const Index = () => {
@@ -43,6 +43,8 @@ const Index = () => {
         return <Metabolites />;
       case 'injections':
         return <Injections />;
+      case 'maintenance':
+        return <Maintenance />;
       case 'admin':
         return <AdminPanel />;
       default:

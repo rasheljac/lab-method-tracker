@@ -143,6 +143,51 @@ export type Database = {
           },
         ]
       }
+      maintenance_logs: {
+        Row: {
+          cost: number | null
+          created_at: string
+          description: string | null
+          id: string
+          maintenance_date: string
+          maintenance_type: string
+          next_maintenance_date: string | null
+          notes: string | null
+          performed_by: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          maintenance_date?: string
+          maintenance_type: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          maintenance_date?: string
+          maintenance_type?: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       metabolites: {
         Row: {
           cas_number: string | null
