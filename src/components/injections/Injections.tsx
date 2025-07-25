@@ -41,27 +41,23 @@ export const Injections = () => {
       
       if (deleteError) throw deleteError;
       
-      // Update column injection count
+      // Update column injection count by decrementing it
       if (injection.column_id) {
-        const { error: columnUpdateError } = await supabase
+        const { data: columnData, error: columnFetchError } = await supabase
           .from('columns')
-          .update({ total_injections: supabase.rpc('decrement_column_injections', { column_id: injection.column_id }) })
-          .eq('id', injection.column_id);
+          .select('total_injections')
+          .eq('id', injection.column_id)
+          .single();
         
-        if (columnUpdateError) {
-          // Fallback: manually decrement the count
-          const { data: columnData, error: columnFetchError } = await supabase
+        if (!columnFetchError && columnData) {
+          const newCount = Math.max(0, columnData.total_injections - 1);
+          const { error: columnUpdateError } = await supabase
             .from('columns')
-            .select('total_injections')
-            .eq('id', injection.column_id)
-            .single();
+            .update({ total_injections: newCount })
+            .eq('id', injection.column_id);
           
-          if (!columnFetchError && columnData) {
-            const newCount = Math.max(0, columnData.total_injections - 1);
-            await supabase
-              .from('columns')
-              .update({ total_injections: newCount })
-              .eq('id', injection.column_id);
+          if (columnUpdateError) {
+            console.error('Error updating column injection count:', columnUpdateError);
           }
         }
       }
