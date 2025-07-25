@@ -1,12 +1,15 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, RotateCcw } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnDetailsDialog } from './ColumnDetailsDialog';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ColumnsTableProps {
   onEdit: (column: any) => void;
@@ -17,6 +20,8 @@ interface ColumnsTableProps {
 export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => {
   const [selectedColumn, setSelectedColumn] = useState<any>(null);
   const [showColumnDetails, setShowColumnDetails] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: columns, isLoading, error } = useQuery({
     queryKey: ['columns'],
@@ -38,6 +43,40 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
   const handleColumnClick = (column: any) => {
     setSelectedColumn(column);
     setShowColumnDetails(true);
+  };
+
+  const handleResetInjectionCount = async (column: any) => {
+    if (!confirm(`Are you sure you want to reset the injection count for "${column.name}"? This will set the count back to 0.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('columns')
+        .update({ 
+          total_injections: 0,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', column.id);
+
+      if (error) throw error;
+
+      // Invalidate queries to refresh the UI
+      await queryClient.invalidateQueries({ queryKey: ['columns'] });
+      await queryClient.invalidateQueries({ queryKey: ['column-lifetime'] });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+
+      toast({
+        title: 'Success',
+        description: `Injection count reset for "${column.name}"`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   if (isLoading) {
@@ -141,6 +180,14 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResetInjectionCount(column)}
+                            title="Reset injection count"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
