@@ -36,7 +36,7 @@ export const ColumnLifetimeChart = () => {
     },
     // Reduce cache time to ensure fresh data
     staleTime: 0,
-    cacheTime: 0,
+    gcTime: 0,
   });
 
   if (isLoading) {
