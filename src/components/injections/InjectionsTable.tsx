@@ -14,12 +14,13 @@ interface InjectionsTableProps {
 }
 
 export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProps) => {
-  const { data: injections, isLoading, error } = useQuery({
+  const { data: injectionBatches, isLoading, error } = useQuery({
     queryKey: ['injections'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
       
+      // Get grouped injections by batch_id
       const { data, error } = await supabase
         .from('injections')
         .select(`
@@ -31,7 +32,40 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
         .order('injection_date', { ascending: false });
       
       if (error) throw error;
-      return data;
+      
+      // Group injections by batch_id
+      const batches = data.reduce((acc: any[], injection: any) => {
+        const existingBatch = acc.find(batch => batch.batch_id === injection.batch_id);
+        
+        if (existingBatch) {
+          existingBatch.injections.push(injection);
+          // Update batch info if needed (use the first injection's data as representative)
+          if (injection.injection_number < existingBatch.min_injection_number) {
+            existingBatch.min_injection_number = injection.injection_number;
+          }
+          if (injection.injection_number > existingBatch.max_injection_number) {
+            existingBatch.max_injection_number = injection.injection_number;
+          }
+        } else {
+          acc.push({
+            batch_id: injection.batch_id,
+            sample_id: injection.sample_id,
+            injection_date: injection.injection_date,
+            method_name: injection.methods?.name || 'Unknown',
+            column_name: injection.columns?.name || 'Unknown',
+            batch_size: injection.batch_size,
+            min_injection_number: injection.injection_number,
+            max_injection_number: injection.injection_number,
+            run_successful: injection.run_successful,
+            injections: [injection]
+          });
+        }
+        
+        return acc;
+      }, []);
+      
+      // Sort batches by date
+      return batches.sort((a, b) => new Date(b.injection_date).getTime() - new Date(a.injection_date).getTime());
     },
   });
 
@@ -46,10 +80,12 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Injection #</TableHead>
+                <TableHead>Injection Range</TableHead>
                 <TableHead>Method</TableHead>
                 <TableHead>Column</TableHead>
+                <TableHead>Sample ID</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead>Batch Size</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -61,6 +97,8 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
                   <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 </TableRow>
@@ -80,13 +118,27 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
     );
   }
 
+  const handleDeleteBatch = async (batch: any) => {
+    if (!confirm(`Are you sure you want to delete this batch of ${batch.batch_size} injections?`)) return;
+    
+    // Delete all injections in the batch
+    for (const injection of batch.injections) {
+      await onDelete(injection.id);
+    }
+  };
+
+  const handleEditBatch = (batch: any) => {
+    // Edit the first injection in the batch as representative
+    onEdit(batch.injections[0]);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Injection History</h3>
+        <h3 className="text-lg font-semibold">Injection Batches</h3>
         <Button onClick={onAdd}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Injection
+          Add Injection Batch
         </Button>
       </div>
 
@@ -94,35 +146,44 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Injection #</TableHead>
+              <TableHead>Injection Range</TableHead>
               <TableHead>Method</TableHead>
               <TableHead>Column</TableHead>
               <TableHead>Sample ID</TableHead>
               <TableHead>Date</TableHead>
+              <TableHead>Batch Size</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {injections?.length === 0 ? (
+            {injectionBatches?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                  No injections found. Add your first injection to get started.
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                  No injection batches found. Add your first injection batch to get started.
                 </TableCell>
               </TableRow>
             ) : (
-              injections?.map((injection) => (
-                <TableRow key={injection.id}>
-                  <TableCell className="font-medium">{injection.injection_number}</TableCell>
-                  <TableCell>{injection.methods?.name || 'Unknown'}</TableCell>
-                  <TableCell>{injection.columns?.name || 'Unknown'}</TableCell>
-                  <TableCell>{injection.sample_id}</TableCell>
+              injectionBatches?.map((batch) => (
+                <TableRow key={batch.batch_id}>
+                  <TableCell className="font-medium">
+                    {batch.min_injection_number === batch.max_injection_number 
+                      ? `#${batch.min_injection_number}`
+                      : `#${batch.min_injection_number}-${batch.max_injection_number}`
+                    }
+                  </TableCell>
+                  <TableCell>{batch.method_name}</TableCell>
+                  <TableCell>{batch.column_name}</TableCell>
+                  <TableCell>{batch.sample_id}</TableCell>
                   <TableCell>
-                    {new Date(injection.injection_date).toLocaleDateString()}
+                    {new Date(batch.injection_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={injection.run_successful ? 'default' : 'destructive'}>
-                      {injection.run_successful ? 'Success' : 'Failed'}
+                    <Badge variant="outline">{batch.batch_size} injections</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={batch.run_successful ? 'default' : 'destructive'}>
+                      {batch.run_successful ? 'Success' : 'Failed'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -130,14 +191,14 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onEdit(injection)}
+                        onClick={() => handleEditBatch(batch)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDelete(injection.id)}
+                        onClick={() => handleDeleteBatch(batch)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

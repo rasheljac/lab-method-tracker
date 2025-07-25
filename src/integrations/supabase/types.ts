@@ -79,6 +79,8 @@ export type Database = {
       }
       injections: {
         Row: {
+          batch_id: string | null
+          batch_size: number | null
           column_id: string
           created_at: string | null
           id: string
@@ -93,6 +95,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          batch_id?: string | null
+          batch_size?: number | null
           column_id: string
           created_at?: string | null
           id?: string
@@ -107,6 +111,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          batch_id?: string | null
+          batch_size?: number | null
           column_id?: string
           created_at?: string | null
           id?: string

@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface InjectionFormProps {
   injection?: any;
@@ -121,8 +122,9 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
           description: 'Injection updated successfully!',
         });
       } else {
-        // Create new injection(s)
+        // Create new injection batch
         const quantity = parseInt(formData.quantity.toString());
+        const batchId = uuidv4(); // Generate a single batch ID for all injections
         const injections = [];
         
         for (let i = 0; i < quantity; i++) {
@@ -137,6 +139,8 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
             injection_date: new Date(formData.injection_date).toISOString(),
             run_successful: formData.run_successful,
             notes: formData.notes,
+            batch_id: batchId,
+            batch_size: quantity,
           };
           injections.push(submitData);
         }
@@ -149,7 +153,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
         
         toast({
           title: 'Success',
-          description: `${quantity} injection${quantity > 1 ? 's' : ''} created successfully!`,
+          description: `Injection batch with ${quantity} injection${quantity > 1 ? 's' : ''} created successfully!`,
         });
       }
 
@@ -172,13 +176,13 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
       <div className="flex items-center space-x-4">
         <Button variant="ghost" onClick={onClose}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Injections
+          Back to Injection Batches
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{injection ? 'Edit Injection' : 'Add New Injection'}</CardTitle>
+          <CardTitle>{injection ? 'Edit Injection Batch' : 'Add New Injection Batch'}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -203,7 +207,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
               </div>
 
               <div>
-                <Label htmlFor="injection_number">Injection Number *</Label>
+                <Label htmlFor="injection_number">Starting Injection Number *</Label>
                 <Input
                   id="injection_number"
                   type="number"
@@ -222,7 +226,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
               
               {!injection && (
                 <div>
-                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Label htmlFor="quantity">Batch Size *</Label>
                   <Input
                     id="quantity"
                     type="number"
@@ -233,7 +237,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                     required
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    Number of injections to create (1-100)
+                    Number of injections in this batch (1-100)
                   </p>
                 </div>
               )}
@@ -319,7 +323,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : injection ? 'Update Injection' : `Create ${formData.quantity} Injection${formData.quantity > 1 ? 's' : ''}`}
+                {loading ? 'Saving...' : injection ? 'Update Injection Batch' : `Create Batch of ${formData.quantity}`}
               </Button>
             </div>
           </form>

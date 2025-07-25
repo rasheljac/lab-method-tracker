@@ -23,8 +23,6 @@ export const Injections = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this injection?')) return;
-
     try {
       const { error } = await supabase
         .from('injections')
@@ -59,8 +57,8 @@ export const Injections = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-gray-900">Injections</h2>
-        <p className="text-gray-600 mt-2">Track and manage your LCMS injection runs</p>
+        <h2 className="text-3xl font-bold text-gray-900">Injection Batches</h2>
+        <p className="text-gray-600 mt-2">Track and manage your LCMS injection batches</p>
       </div>
       
       <InjectionsTable
