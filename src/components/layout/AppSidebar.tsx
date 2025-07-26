@@ -50,7 +50,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           <img 
             src="/lovable-uploads/1057252a-23f8-45ab-8d12-30e8d2ce821a.png" 
             alt="Kapelczak Logo" 
-            className="h-10 w-10"
+            className="h-10 w-auto object-contain"
           />
           <div>
             <h1 className="text-xl font-bold text-gray-800">Kapelczak</h1>
