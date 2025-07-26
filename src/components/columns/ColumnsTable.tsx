@@ -1,13 +1,13 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2, RotateCcw } from 'lucide-react';
+import { Plus, Edit, Trash2, RotateCcw, Shield } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnDetailsDialog } from './ColumnDetailsDialog';
+import { GuardColumnTracker } from './GuardColumnTracker';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -20,6 +20,7 @@ interface ColumnsTableProps {
 export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => {
   const [selectedColumn, setSelectedColumn] = useState<any>(null);
   const [showColumnDetails, setShowColumnDetails] = useState(false);
+  const [showGuardColumnTracker, setShowGuardColumnTracker] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -43,6 +44,10 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
   const handleColumnClick = (column: any) => {
     setSelectedColumn(column);
     setShowColumnDetails(true);
+  };
+
+  const handleGuardColumnClick = (column: any) => {
+    setShowGuardColumnTracker(column);
   };
 
   const handleResetInjectionCount = async (column: any) => {
@@ -78,6 +83,16 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
       });
     }
   };
+
+  if (showGuardColumnTracker) {
+    return (
+      <GuardColumnTracker
+        columnId={showGuardColumnTracker.id}
+        columnName={showGuardColumnTracker.name}
+        totalInjections={showGuardColumnTracker.total_injections}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -180,6 +195,14 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleGuardColumnClick(column)}
+                            title="Guard column tracking"
+                          >
+                            <Shield className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
