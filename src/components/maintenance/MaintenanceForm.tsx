@@ -80,10 +80,15 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
       if (!user) throw new Error('Not authenticated');
 
       const maintenanceData = {
-        ...data,
-        user_id: user.id,
+        title: data.title,
+        description: data.description || null,
+        maintenance_type: data.maintenance_type,
         maintenance_date: data.maintenance_date.toISOString(),
+        performed_by: data.performed_by || null,
         next_maintenance_date: data.next_maintenance_date?.toISOString() || null,
+        cost: data.cost || null,
+        notes: data.notes || null,
+        user_id: user.id,
       };
 
       if (maintenance) {
@@ -100,7 +105,7 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
       } else {
         const { error } = await supabase
           .from('maintenance_logs')
-          .insert([maintenanceData]);
+          .insert(maintenanceData);
         
         if (error) throw error;
         toast({
