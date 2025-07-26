@@ -9,6 +9,17 @@ import { Plus, Calendar, AlertTriangle } from 'lucide-react';
 import { GuardColumnForm } from './GuardColumnForm';
 import { GuardColumnTimeline } from './GuardColumnTimeline';
 
+interface GuardColumn {
+  id: string;
+  part_number: string;
+  batch_number: string | null;
+  installed_date: string;
+  removed_date: string | null;
+  installation_injection_count: number;
+  removal_injection_count: number | null;
+  notes: string | null;
+}
+
 interface GuardColumnTrackerProps {
   columnId: string;
   columnName: string;
@@ -22,14 +33,19 @@ export const GuardColumnTracker = ({ columnId, columnName, totalInjections }: Gu
   const { data: guardColumns, isLoading } = useQuery({
     queryKey: ['guard-columns', columnId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('guard_columns')
-        .select('*')
-        .eq('column_id', columnId)
-        .order('installed_date', { ascending: true });
+      const { data, error } = await supabase.rpc('exec', {
+        sql: `
+          SELECT id, part_number, batch_number, installed_date, removed_date,
+                 installation_injection_count, removal_injection_count, notes
+          FROM guard_columns 
+          WHERE column_id = $1 AND user_id = $2
+          ORDER BY installed_date ASC
+        `,
+        args: [columnId, (await supabase.auth.getUser()).data.user?.id]
+      });
       
       if (error) throw error;
-      return data;
+      return data as GuardColumn[];
     },
   });
 

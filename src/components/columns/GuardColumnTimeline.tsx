@@ -6,12 +6,12 @@ import { Calendar, ArrowRight } from 'lucide-react';
 interface GuardColumn {
   id: string;
   part_number: string;
-  batch_number: string;
+  batch_number: string | null;
   installed_date: string;
   removed_date: string | null;
   installation_injection_count: number;
   removal_injection_count: number | null;
-  notes: string;
+  notes: string | null;
 }
 
 interface GuardColumnTimelineProps {

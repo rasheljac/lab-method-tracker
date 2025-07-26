@@ -77,6 +77,59 @@ export type Database = {
         }
         Relationships: []
       }
+      guard_columns: {
+        Row: {
+          batch_number: string | null
+          column_id: string
+          created_at: string
+          id: string
+          installation_injection_count: number
+          installed_date: string
+          notes: string | null
+          part_number: string
+          removal_injection_count: number | null
+          removed_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          batch_number?: string | null
+          column_id: string
+          created_at?: string
+          id?: string
+          installation_injection_count?: number
+          installed_date: string
+          notes?: string | null
+          part_number: string
+          removal_injection_count?: number | null
+          removed_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          batch_number?: string | null
+          column_id?: string
+          created_at?: string
+          id?: string
+          installation_injection_count?: number
+          installed_date?: string
+          notes?: string | null
+          part_number?: string
+          removal_injection_count?: number | null
+          removed_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_columns_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "columns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       injections: {
         Row: {
           batch_id: string | null
