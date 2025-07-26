@@ -81,7 +81,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter>
         <div className="p-4 text-xs text-gray-500">
-          © 2024 Kapelczak Lab Systems
+          © 2025 Kapelczak Lab Systems
         </div>
       </SidebarFooter>
     </Sidebar>

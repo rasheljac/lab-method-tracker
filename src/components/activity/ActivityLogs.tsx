@@ -12,6 +12,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
+  PaginationEllipsis,
 } from '@/components/ui/pagination';
 
 const ITEMS_PER_PAGE = 20;
@@ -174,6 +175,89 @@ export const ActivityLogs = () => {
     }
   };
 
+  const renderPaginationItems = () => {
+    const items = [];
+    const showEllipsisStart = currentPage > 3;
+    const showEllipsisEnd = currentPage < totalPages - 2;
+
+    // Always show first page
+    items.push(
+      <PaginationItem key={1}>
+        <PaginationLink
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            setCurrentPage(1);
+          }}
+          isActive={currentPage === 1}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    );
+
+    // Show ellipsis if needed
+    if (showEllipsisStart) {
+      items.push(
+        <PaginationItem key="ellipsis-start">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+    }
+
+    // Show pages around current page
+    const startPage = Math.max(2, currentPage - 1);
+    const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+    for (let page = startPage; page <= endPage; page++) {
+      if (page !== 1 && page !== totalPages) {
+        items.push(
+          <PaginationItem key={page}>
+            <PaginationLink
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentPage(page);
+              }}
+              isActive={currentPage === page}
+            >
+              {page}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+    }
+
+    // Show ellipsis if needed
+    if (showEllipsisEnd) {
+      items.push(
+        <PaginationItem key="ellipsis-end">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+    }
+
+    // Always show last page if there's more than one page
+    if (totalPages > 1) {
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setCurrentPage(totalPages);
+            }}
+            isActive={currentPage === totalPages}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -278,25 +362,7 @@ export const ActivityLogs = () => {
                     />
                   </PaginationItem>
                   
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNum = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i + 1));
-                    if (pageNum > totalPages) return null;
-                    
-                    return (
-                      <PaginationItem key={pageNum}>
-                        <PaginationLink
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(pageNum);
-                          }}
-                          isActive={currentPage === pageNum}
-                        >
-                          {pageNum}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
+                  {renderPaginationItems()}
                   
                   <PaginationItem>
                     <PaginationNext 
