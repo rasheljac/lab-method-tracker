@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Settings } from 'lucide-react';
+import { GuardColumnTypeManager } from './GuardColumnTypeManager';
 
 interface GuardColumnFormProps {
   columnId: string;
@@ -15,6 +16,11 @@ interface GuardColumnFormProps {
   totalInjections: number;
   onClose: () => void;
   onSuccess: () => void;
+}
+
+interface GuardColumnType {
+  part_number: string;
+  expected_lifetime: number;
 }
 
 export const GuardColumnForm = ({ 
@@ -29,9 +35,11 @@ export const GuardColumnForm = ({
     batch_number: '',
     installed_date: new Date().toISOString().split('T')[0],
     installation_injection_count: totalInjections,
+    expected_lifetime: 1000,
     notes: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showTypeManager, setShowTypeManager] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,6 +80,9 @@ export const GuardColumnForm = ({
 
       if (insertError) throw insertError;
 
+      // Save the expected lifetime to localStorage for this column
+      localStorage.setItem(`guardColumn_${columnId}_lifetime`, formData.expected_lifetime.toString());
+
       toast({
         title: 'Success',
         description: 'Guard column change recorded successfully!',
@@ -87,6 +98,14 @@ export const GuardColumnForm = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectType = (type: GuardColumnType) => {
+    setFormData({
+      ...formData,
+      part_number: type.part_number,
+      expected_lifetime: type.expected_lifetime
+    });
   };
 
   return (
@@ -107,11 +126,30 @@ export const GuardColumnForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="part_number">Guard Column Part Number *</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    id="part_number"
+                    value={formData.part_number}
+                    onChange={(e) => setFormData({ ...formData, part_number: e.target.value })}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowTypeManager(true)}
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="expected_lifetime">Expected Lifetime (injections)</Label>
                 <Input
-                  id="part_number"
-                  value={formData.part_number}
-                  onChange={(e) => setFormData({ ...formData, part_number: e.target.value })}
-                  required
+                  id="expected_lifetime"
+                  type="number"
+                  value={formData.expected_lifetime}
+                  onChange={(e) => setFormData({ ...formData, expected_lifetime: parseInt(e.target.value) || 1000 })}
+                  min="1"
                 />
               </div>
               <div>
@@ -165,6 +203,12 @@ export const GuardColumnForm = ({
           </form>
         </CardContent>
       </Card>
+
+      <GuardColumnTypeManager
+        isOpen={showTypeManager}
+        onClose={() => setShowTypeManager(false)}
+        onSelectType={handleSelectType}
+      />
     </div>
   );
 };

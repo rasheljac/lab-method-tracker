@@ -41,7 +41,7 @@ export const GuardColumnTracker = ({ columnId, columnName, totalInjections }: Gu
         .select('*')
         .eq('column_id', columnId)
         .eq('user_id', user.id)
-        .order('installed_date', { ascending: true });
+        .order('installed_date', { ascending: false });
       
       if (error) throw error;
       return data as GuardColumn[];
@@ -49,7 +49,14 @@ export const GuardColumnTracker = ({ columnId, columnName, totalInjections }: Gu
   });
 
   const currentGuardColumn = guardColumns?.find(gc => !gc.removed_date);
-  const guardColumnLifespan = 1000; // Typical guard column lifespan in injections
+  
+  // Get the custom lifetime for this column, default to 1000
+  const getGuardColumnLifespan = () => {
+    const savedLifetime = localStorage.getItem(`guardColumn_${columnId}_lifetime`);
+    return savedLifetime ? parseInt(savedLifetime) : 1000;
+  };
+
+  const guardColumnLifespan = getGuardColumnLifespan();
 
   const getGuardColumnStatus = () => {
     if (!currentGuardColumn) return 'none';
@@ -162,13 +169,20 @@ export const GuardColumnTracker = ({ columnId, columnName, totalInjections }: Gu
                     {totalInjections - (currentGuardColumn.installation_injection_count || 0)}
                   </span>
                 </div>
+                <div>
+                  <span className="text-blue-700">Expected Lifetime:</span>
+                  <span className="ml-2">{guardColumnLifespan} injections</span>
+                </div>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      <GuardColumnTimeline guardColumns={guardColumns || []} />
+      <GuardColumnTimeline 
+        guardColumns={guardColumns || []} 
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['guard-columns', columnId] })}
+      />
     </div>
   );
 };
