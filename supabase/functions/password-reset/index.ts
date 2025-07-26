@@ -71,8 +71,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw resetError;
     }
 
-    // Configure nodemailer transporter
-    const transporter = nodemailer.createTransporter({
+    // Configure nodemailer transporter - use createTransport, not createTransporter
+    const transporter = nodemailer.createTransport({
       host: smtpSettings.smtp_host,
       port: smtpSettings.smtp_port,
       secure: smtpSettings.smtp_port === 465, // true for 465, false for other ports

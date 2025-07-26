@@ -22,8 +22,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Missing required fields');
     }
 
-    // Configure nodemailer transporter
-    const transporter = nodemailer.createTransporter({
+    // Configure nodemailer transporter - use createTransport, not createTransporter
+    const transporter = nodemailer.createTransport({
       host: smtp_settings.smtp_host,
       port: smtp_settings.smtp_port,
       secure: smtp_settings.smtp_port === 465, // true for 465, false for other ports
