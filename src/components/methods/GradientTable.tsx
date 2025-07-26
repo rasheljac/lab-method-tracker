@@ -107,7 +107,7 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <Card>
         <CardHeader>
           <CardTitle>Gradient Profile</CardTitle>
@@ -202,32 +202,38 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
             <CardTitle>Gradient Preview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80 w-full">
+            <div className="w-full" style={{ height: '400px', minHeight: '400px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <LineChart 
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="time" 
-                    label={{ value: 'Time (min)', position: 'insideBottom', offset: -5 }}
+                    label={{ value: 'Time (min)', position: 'insideBottomLeft', offset: 0 }}
                   />
                   <YAxis 
                     label={{ value: 'Percentage (%)', angle: -90, position: 'insideLeft' }}
+                    domain={[0, 100]}
                   />
                   <Tooltip />
-                  <Legend />
+                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
                   <Line 
                     type="monotone" 
                     dataKey="Mobile Phase A (%)" 
                     stroke="#3b82f6" 
                     strokeWidth={2}
-                    dot={{ fill: '#3b82f6' }}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2 }}
+                    activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="Mobile Phase B (%)" 
                     stroke="#ef4444" 
                     strokeWidth={2}
-                    dot={{ fill: '#ef4444' }}
+                    dot={{ fill: '#ef4444', strokeWidth: 2 }}
+                    activeDot={{ r: 6, stroke: '#ef4444', strokeWidth: 2, fill: '#fff' }}
                   />
                 </LineChart>
               </ResponsiveContainer>

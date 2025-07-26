@@ -45,14 +45,14 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[90vh] w-[90vw] flex flex-col p-0">
-        <DialogHeader className="flex-shrink-0 p-6 pb-2">
+      <DialogContent className="max-w-[95vw] w-full max-h-[95vh] h-full flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b">
           <DialogTitle className="text-xl font-semibold">{method.name}</DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden px-6">
-          <ScrollArea className="h-full max-h-[calc(90vh-100px)]">
-            <div className="space-y-6 pb-6 pr-4">
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-6 space-y-6">
               {/* Basic Information */}
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">Basic Information</h3>
@@ -149,9 +149,9 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
               {gradientSteps.length > 0 && (
                 <>
                   <Separator />
-                  <div>
+                  <div className="min-h-0 flex-1">
                     <h3 className="font-medium text-gray-900 mb-3">Gradient Chart</h3>
-                    <div className="w-full">
+                    <div className="w-full overflow-visible">
                       <GradientTable
                         value={gradientSteps}
                         onChange={() => {}} // Read-only in details view
@@ -176,7 +176,7 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
               <Separator />
 
               {/* Metadata */}
-              <div>
+              <div className="pb-6">
                 <h3 className="font-medium text-gray-900 mb-3">Metadata</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
