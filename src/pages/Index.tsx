@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { Methods } from '@/components/methods/Methods';
 import { Columns } from '@/components/columns/Columns';
@@ -11,6 +12,11 @@ import { Metabolites } from '@/components/metabolites/Metabolites';
 import { Injections } from '@/components/injections/Injections';
 import { Maintenance } from '@/components/maintenance/Maintenance';
 import { AdminPanel } from '@/components/admin/AdminPanel';
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -18,10 +24,10 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -53,16 +59,21 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header />
-      <div className="flex flex-1">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        <main className="flex-1 p-6">
-          {renderContent()}
-        </main>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Header />
+          </header>
+          <main className="flex-1 p-6">
+            {renderContent()}
+          </main>
+          <Footer />
+        </SidebarInset>
       </div>
-      <Footer />
-    </div>
+    </SidebarProvider>
   );
 };
 
