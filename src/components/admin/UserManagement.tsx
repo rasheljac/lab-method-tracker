@@ -105,12 +105,12 @@ export const UserManagement = () => {
           .delete()
           .eq('user_id', editingUser.id);
 
-        // Insert new role
+        // Insert new role with proper typing
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert({
             user_id: editingUser.id,
-            role: editForm.role
+            role: editForm.role as 'admin' | 'user'
           });
 
         if (roleError) throw roleError;
