@@ -121,19 +121,19 @@ export const EmailTemplateEditor = () => {
   };
 
   const previewHtml = template
-    .replace('{{subject}}', 'Password Reset Request')
-    .replace('{{message_body}}', 'We received a request to reset your password. Click the button below to create a new password:')
-    .replace('{{action_link}}', '#')
-    .replace('{{action_text}}', 'Reset Password')
-    .replace('{{footer_message}}', 'If you didn\'t request this password reset, you can safely ignore this email. This link will expire in 1 hour.')
-    .replace('{{company_info}}', 'Your Company Name - Secure & Reliable');
+    .replace(/\{\{subject\}\}/g, 'Password Reset Request')
+    .replace(/\{\{message_body\}\}/g, 'We received a request to reset your password. Click the button below to create a new password:')
+    .replace(/\{\{action_link\}\}/g, '#')
+    .replace(/\{\{action_text\}\}/g, 'Reset Password')
+    .replace(/\{\{footer_message\}\}/g, 'If you didn\'t request this password reset, you can safely ignore this email. This link will expire in 1 hour.')
+    .replace(/\{\{company_info\}\}/g, 'Your Company Name - Secure & Reliable');
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Email Template Editor</CardTitle>
         <CardDescription>
-          Customize the HTML template for password reset emails. Use placeholders like {{'{'}{'}'}} for dynamic content.
+          Customize the HTML template for password reset emails. Use placeholders like {`{{placeholder}}`} for dynamic content.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -148,7 +148,7 @@ export const EmailTemplateEditor = () => {
             placeholder="Enter your HTML template here..."
           />
           <div className="text-sm text-muted-foreground">
-            Available placeholders: {'{'}{'{'}}subject{'}'}{'}'}, {'{'}{'{'}}message_body{'}'}{'}'}, {'{'}{'{'}}action_link{'}'}{'}'}, {'{'}{'{'}}action_text{'}'}{'}'}, {'{'}{'{'}}footer_message{'}'}{'}'}, {'{'}{'{'}}company_info{'}'}{'}'}
+            Available placeholders: {`{{subject}}`}, {`{{message_body}}`}, {`{{action_link}}`}, {`{{action_text}}`}, {`{{footer_message}}`}, {`{{company_info}}`}
           </div>
         </div>
 
