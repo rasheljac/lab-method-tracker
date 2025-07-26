@@ -33,16 +33,15 @@ export const GuardColumnTracker = ({ columnId, columnName, totalInjections }: Gu
   const { data: guardColumns, isLoading } = useQuery({
     queryKey: ['guard-columns', columnId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('exec', {
-        sql: `
-          SELECT id, part_number, batch_number, installed_date, removed_date,
-                 installation_injection_count, removal_injection_count, notes
-          FROM guard_columns 
-          WHERE column_id = $1 AND user_id = $2
-          ORDER BY installed_date ASC
-        `,
-        args: [columnId, (await supabase.auth.getUser()).data.user?.id]
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
+      const { data, error } = await supabase
+        .from('guard_columns')
+        .select('*')
+        .eq('column_id', columnId)
+        .eq('user_id', user.id)
+        .order('installed_date', { ascending: true });
       
       if (error) throw error;
       return data as GuardColumn[];

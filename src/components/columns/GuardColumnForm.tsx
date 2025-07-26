@@ -42,38 +42,33 @@ export const GuardColumnForm = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // First, mark any existing guard column as removed using rpc or direct SQL
-      const { error: updateError } = await supabase.rpc('exec', {
-        sql: `
-          UPDATE guard_columns 
-          SET removed_date = NOW(), removal_injection_count = $3
-          WHERE column_id = $1 AND user_id = $2 AND removed_date IS NULL
-        `,
-        args: [columnId, user.id, totalInjections]
-      });
+      // First, mark any existing guard column as removed
+      const { error: updateError } = await supabase
+        .from('guard_columns')
+        .update({
+          removed_date: new Date().toISOString().split('T')[0],
+          removal_injection_count: totalInjections
+        })
+        .eq('column_id', columnId)
+        .eq('user_id', user.id)
+        .is('removed_date', null);
 
       if (updateError) {
         console.log('Update error (may be expected if no existing guard column):', updateError);
       }
 
-      // Then insert the new guard column using rpc
-      const { error: insertError } = await supabase.rpc('exec', {
-        sql: `
-          INSERT INTO guard_columns (
-            column_id, user_id, part_number, batch_number, 
-            installed_date, installation_injection_count, notes
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        `,
-        args: [
-          columnId,
-          user.id,
-          formData.part_number,
-          formData.batch_number || null,
-          formData.installed_date,
-          formData.installation_injection_count,
-          formData.notes || null
-        ]
-      });
+      // Then insert the new guard column
+      const { error: insertError } = await supabase
+        .from('guard_columns')
+        .insert({
+          column_id: columnId,
+          user_id: user.id,
+          part_number: formData.part_number,
+          batch_number: formData.batch_number || null,
+          installed_date: formData.installed_date,
+          installation_injection_count: formData.installation_injection_count,
+          notes: formData.notes || null
+        });
 
       if (insertError) throw insertError;
 
