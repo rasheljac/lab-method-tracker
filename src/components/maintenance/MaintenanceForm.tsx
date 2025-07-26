@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,6 +16,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { CustomFieldsRenderer } from './CustomFieldsRenderer';
+import { useCustomFields } from '@/hooks/useCustomFields';
 
 const maintenanceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -38,8 +39,12 @@ interface MaintenanceFormProps {
 
 export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>(
+    maintenance?.custom_fields || {}
+  );
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: customFields } = useCustomFields();
 
   const {
     register,
@@ -79,6 +84,21 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Validate required custom fields
+      if (customFields) {
+        for (const field of customFields) {
+          if (field.is_required && !customFieldValues[field.field_name]) {
+            toast({
+              title: 'Error',
+              description: `${field.field_label} is required`,
+              variant: 'destructive',
+            });
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
+
       const maintenanceData = {
         title: data.title,
         description: data.description || null,
@@ -88,6 +108,7 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
         next_maintenance_date: data.next_maintenance_date?.toISOString() || null,
         cost: data.cost || null,
         notes: data.notes || null,
+        custom_fields: customFieldValues,
         user_id: user.id,
       };
 
@@ -114,7 +135,7 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
         });
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['maintenance_logs'] });
+      await queryClient.invalidateQueries({ queryKey: ['maintenance-logs'] });
       onClose();
     } catch (error: any) {
       toast({
@@ -125,6 +146,13 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCustomFieldChange = (fieldName: string, value: any) => {
+    setCustomFieldValues(prev => ({
+      ...prev,
+      [fieldName]: value,
+    }));
   };
 
   return (
@@ -144,7 +172,7 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
           <CardTitle>Maintenance Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="title">Title *</Label>
@@ -294,6 +322,14 @@ export const MaintenanceForm = ({ maintenance, onClose }: MaintenanceFormProps) 
                 <p className="text-sm text-red-500">{errors.notes.message}</p>
               )}
             </div>
+
+            {customFields && customFields.length > 0 && (
+              <CustomFieldsRenderer
+                customFields={customFields}
+                customFieldValues={customFieldValues}
+                onCustomFieldChange={handleCustomFieldChange}
+              />
+            )}
 
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={onClose}>

@@ -2,24 +2,27 @@
 import { useState } from 'react';
 import { MaintenanceTable } from './MaintenanceTable';
 import { MaintenanceForm } from './MaintenanceForm';
+import { CustomFieldsManager } from './CustomFieldsManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
+type ViewMode = 'table' | 'form' | 'custom-fields';
+
 export const Maintenance = () => {
-  const [showForm, setShowForm] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [editingMaintenance, setEditingMaintenance] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const handleAdd = () => {
     setEditingMaintenance(null);
-    setShowForm(true);
+    setViewMode('form');
   };
 
   const handleEdit = (maintenance: any) => {
     setEditingMaintenance(maintenance);
-    setShowForm(true);
+    setViewMode('form');
   };
 
   const handleDelete = async (id: string) => {
@@ -48,12 +51,20 @@ export const Maintenance = () => {
   };
 
   const handleClose = () => {
-    setShowForm(false);
+    setViewMode('table');
     setEditingMaintenance(null);
   };
 
-  if (showForm) {
+  const handleManageCustomFields = () => {
+    setViewMode('custom-fields');
+  };
+
+  if (viewMode === 'form') {
     return <MaintenanceForm maintenance={editingMaintenance} onClose={handleClose} />;
+  }
+
+  if (viewMode === 'custom-fields') {
+    return <CustomFieldsManager onClose={handleClose} />;
   }
 
   return (
@@ -67,6 +78,7 @@ export const Maintenance = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onAdd={handleAdd}
+        onManageCustomFields={handleManageCustomFields}
       />
     </div>
   );

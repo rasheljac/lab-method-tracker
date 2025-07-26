@@ -143,10 +143,50 @@ export type Database = {
           },
         ]
       }
+      maintenance_custom_fields: {
+        Row: {
+          created_at: string | null
+          field_label: string
+          field_name: string
+          field_order: number | null
+          field_type: string
+          id: string
+          is_required: boolean | null
+          select_options: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          field_label: string
+          field_name: string
+          field_order?: number | null
+          field_type: string
+          id?: string
+          is_required?: boolean | null
+          select_options?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          field_label?: string
+          field_name?: string
+          field_order?: number | null
+          field_type?: string
+          id?: string
+          is_required?: boolean | null
+          select_options?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       maintenance_logs: {
         Row: {
           cost: number | null
           created_at: string
+          custom_fields: Json | null
           description: string | null
           id: string
           maintenance_date: string
@@ -161,6 +201,7 @@ export type Database = {
         Insert: {
           cost?: number | null
           created_at?: string
+          custom_fields?: Json | null
           description?: string | null
           id?: string
           maintenance_date?: string
@@ -175,6 +216,7 @@ export type Database = {
         Update: {
           cost?: number | null
           created_at?: string
+          custom_fields?: Json | null
           description?: string | null
           id?: string
           maintenance_date?: string

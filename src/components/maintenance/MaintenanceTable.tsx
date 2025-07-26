@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,9 +11,10 @@ interface MaintenanceTableProps {
   onEdit: (maintenance: any) => void;
   onDelete: (id: string) => void;
   onAdd: () => void;
+  onManageCustomFields: () => void;
 }
 
-export const MaintenanceTable = ({ onEdit, onDelete, onAdd }: MaintenanceTableProps) => {
+export const MaintenanceTable = ({ onEdit, onDelete, onAdd, onManageCustomFields }: MaintenanceTableProps) => {
   const { data: maintenanceLogs, isLoading, error } = useQuery({
     queryKey: ['maintenance-logs'],
     queryFn: async () => {
@@ -72,10 +72,16 @@ export const MaintenanceTable = ({ onEdit, onDelete, onAdd }: MaintenanceTablePr
             {maintenanceLogs?.length || 0} maintenance logs
           </span>
         </div>
-        <Button onClick={onAdd} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Maintenance Log
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={onManageCustomFields} variant="outline" className="bg-gray-50 hover:bg-gray-100">
+            <Plus className="h-4 w-4 mr-2" />
+            Manage Custom Fields
+          </Button>
+          <Button onClick={onAdd} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Maintenance Log
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
