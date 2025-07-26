@@ -469,27 +469,81 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          department: string | null
           full_name: string | null
           id: string
           institution: string | null
           lab_name: string | null
+          last_login_at: string | null
+          phone: string | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          department?: string | null
           full_name?: string | null
           id: string
           institution?: string | null
           lab_name?: string | null
+          last_login_at?: string | null
+          phone?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          department?: string | null
           full_name?: string | null
           id?: string
           institution?: string | null
           lab_name?: string | null
+          last_login_at?: string | null
+          phone?: string | null
+          status?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      smtp_settings: {
+        Row: {
+          created_at: string
+          created_by: string
+          from_email: string
+          from_name: string
+          id: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port: number
+          smtp_username: string
+          updated_at: string
+          use_tls: boolean
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          from_email: string
+          from_name?: string
+          id?: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port?: number
+          smtp_username: string
+          updated_at?: string
+          use_tls?: boolean
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          from_email?: string
+          from_name?: string
+          id?: string
+          smtp_host?: string
+          smtp_password?: string
+          smtp_port?: number
+          smtp_username?: string
+          updated_at?: string
+          use_tls?: boolean
         }
         Relationships: []
       }
@@ -528,6 +582,22 @@ export type Database = {
         }
         Returns: Json
       }
+      get_all_users_with_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          full_name: string
+          institution: string
+          lab_name: string
+          phone: string
+          department: string
+          status: string
+          created_at: string
+          last_login_at: string
+          roles: string[]
+        }[]
+      }
       get_dashboard_stats: {
         Args: { user_uuid: string }
         Returns: {
@@ -549,6 +619,10 @@ export type Database = {
       make_first_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      request_password_reset: {
+        Args: { user_email: string }
+        Returns: Json
       }
     }
     Enums: {

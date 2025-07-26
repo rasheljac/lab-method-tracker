@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { PasswordReset } from './PasswordReset';
 
 export const AuthForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   const { signIn } = useAuth();
   const { toast } = useToast();
 
@@ -30,6 +32,14 @@ export const AuthForm = () => {
     
     setLoading(false);
   };
+
+  if (showPasswordReset) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-100 to-purple-100 p-4">
+        <PasswordReset onBackToLogin={() => setShowPasswordReset(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-100 to-purple-100 p-4">
@@ -73,6 +83,17 @@ export const AuthForm = () => {
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
+          
+          <div className="mt-4 text-center">
+            <Button 
+              variant="link" 
+              onClick={() => setShowPasswordReset(true)}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Forgot your password?
+            </Button>
+          </div>
+          
           <div className="mt-4 text-center text-sm text-gray-600">
             Contact your administrator for account access.
           </div>

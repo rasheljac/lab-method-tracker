@@ -1,13 +1,15 @@
-
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUserRole } from '@/hooks/useUserRole';
+import { UserManagement } from './UserManagement';
+import { SmtpSettings } from './SmtpSettings';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useUserRole } from '@/hooks/useUserRole';
 
 export const AdminPanel = () => {
   const [email, setEmail] = useState('');
@@ -91,71 +93,89 @@ export const AdminPanel = () => {
         <p className="text-gray-600">Manage users and system settings</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New User</CardTitle>
-          <CardDescription>
-            Add a new user to the system. Users will receive login credentials via email.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleCreateUser} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter full name"
-                required
-              />
-            </div>
+      <Tabs defaultValue="create-user" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="create-user">Create User</TabsTrigger>
+          <TabsTrigger value="manage-users">Manage Users</TabsTrigger>
+          <TabsTrigger value="smtp-settings">SMTP Settings</TabsTrigger>
+        </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email address"
-                required
-              />
-            </div>
+        <TabsContent value="create-user">
+          <Card>
+            <CardHeader>
+              <CardTitle>Create New User</CardTitle>
+              <CardDescription>
+                Add a new user to the system. Users will receive login credentials via email.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Enter full name"
+                    required
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                required
-                minLength={6}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter email address"
+                    required
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={userRole} onValueChange={(value: 'user' | 'admin') => setUserRole(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    required
+                    minLength={6}
+                  />
+                </div>
 
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Creating User...' : 'Create User'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={userRole} onValueChange={(value: 'user' | 'admin') => setUserRole(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? 'Creating User...' : 'Create User'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="manage-users">
+          <UserManagement />
+        </TabsContent>
+
+        <TabsContent value="smtp-settings">
+          <SmtpSettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
