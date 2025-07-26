@@ -45,13 +45,13 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-7xl max-h-[95vh] w-[95vw] flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="text-xl font-semibold">{method.name}</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6">
+        <ScrollArea className="flex-1 pr-4 max-h-[calc(95vh-80px)]">
+          <div className="space-y-6 pb-6">
             {/* Basic Information */}
             <div>
               <h3 className="font-medium text-gray-900 mb-3">Basic Information</h3>
@@ -150,7 +150,7 @@ export const MethodDetailsDialog = ({ method, open, onOpenChange }: MethodDetail
                 <Separator />
                 <div>
                   <h3 className="font-medium text-gray-900 mb-3">Gradient Chart</h3>
-                  <div className="w-full">
+                  <div className="w-full min-h-[600px]">
                     <GradientTable
                       value={gradientSteps}
                       onChange={() => {}} // Read-only in details view

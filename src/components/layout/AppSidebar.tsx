@@ -1,28 +1,33 @@
 
-import { useUserRole } from '@/hooks/useUserRole';
-import { BarChart3, FlaskConical, Columns, Pill, Activity, Shield, Wrench } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarHeader,
-  useSidebar,
-} from "@/components/ui/sidebar";
+} from "@/components/ui/sidebar"
+import { useUserRole } from '@/hooks/useUserRole'
+import { 
+  BarChart3, 
+  FlaskConical, 
+  Columns, 
+  Pill, 
+  Activity, 
+  Shield, 
+  Wrench 
+} from 'lucide-react'
 
 interface AppSidebarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab: string
+  onTabChange: (tab: string) => void
 }
 
-export const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
-  const { isAdmin } = useUserRole();
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
+  const { isAdmin } = useUserRole()
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -31,31 +36,30 @@ export const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
     { id: 'metabolites', label: 'Metabolites', icon: Pill },
     { id: 'injections', label: 'Injections', icon: Activity },
     { id: 'maintenance', label: 'Maintenance', icon: Wrench },
-  ];
+  ]
 
   // Add admin panel if user is admin
   if (isAdmin) {
-    menuItems.push({ id: 'admin', label: 'Admin', icon: Shield });
+    menuItems.push({ id: 'admin', label: 'Admin', icon: Shield })
   }
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <FlaskConical className="h-4 w-4" />
+    <Sidebar>
+      <SidebarHeader className="p-6">
+        <div className="flex items-center space-x-3">
+          <img 
+            src="/lovable-uploads/1057252a-23f8-45ab-8d12-30e8d2ce821a.png" 
+            alt="Kapelczak Logo" 
+            className="h-10 w-10"
+          />
+          <div>
+            <h1 className="text-xl font-bold text-gray-800">Kapelczak</h1>
+            <p className="text-xs text-gray-600">MS Visualizer</p>
           </div>
-          {!collapsed && (
-            <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-sidebar-foreground">LCMS Tracker</span>
-            </div>
-          )}
         </div>
       </SidebarHeader>
-      
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -63,7 +67,6 @@ export const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
                   <SidebarMenuButton
                     onClick={() => onTabChange(item.id)}
                     isActive={activeTab === item.id}
-                    tooltip={collapsed ? item.label : undefined}
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -74,6 +77,11 @@ export const AppSidebar = ({ activeTab, onTabChange }: AppSidebarProps) => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <div className="p-4 text-xs text-gray-500">
+          © 2024 Kapelczak Lab Systems
+        </div>
+      </SidebarFooter>
     </Sidebar>
-  );
-};
+  )
+}
