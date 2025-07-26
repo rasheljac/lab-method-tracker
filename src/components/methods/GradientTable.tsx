@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Trash2, Plus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -114,70 +115,92 @@ export const GradientTable = ({ value, onChange, readOnly = false }: GradientTab
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className={`grid ${readOnly ? 'grid-cols-4' : 'grid-cols-5'} gap-2 text-sm font-medium text-gray-700`}>
-              <div>Time (min)</div>
-              <div>%A</div>
-              <div>%B</div>
-              <div>Flow Rate (mL/min)</div>
-              {!readOnly && <div>Actions</div>}
-            </div>
-            
-            {steps.map((step, index) => (
-              <div key={index} className={`grid ${readOnly ? 'grid-cols-4' : 'grid-cols-5'} gap-2 items-center`}>
-                {readOnly ? (
-                  <>
-                    <div className="text-sm">{step.time}</div>
-                    <div className="text-sm">{step.percent_a}%</div>
-                    <div className="text-sm">{step.percent_b}%</div>
-                    <div className="text-sm">{step.flow_rate}</div>
-                  </>
-                ) : (
-                  <>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={step.time}
-                      onChange={(e) => handleStepChange(index, 'time', e.target.value)}
-                      className="h-8"
-                    />
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={step.percent_a}
-                      onChange={(e) => handleStepChange(index, 'percent_a', e.target.value)}
-                      className="h-8"
-                    />
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={step.percent_b}
-                      onChange={(e) => handleStepChange(index, 'percent_b', e.target.value)}
-                      className="h-8"
-                    />
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={step.flow_rate}
-                      onChange={(e) => handleStepChange(index, 'flow_rate', e.target.value)}
-                      className="h-8"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeStep(index)}
-                      disabled={steps.length === 1}
-                      className="h-8"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-              </div>
-            ))}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Time (min)</TableHead>
+                  <TableHead>%A</TableHead>
+                  <TableHead>%B</TableHead>
+                  <TableHead>Flow Rate (mL/min)</TableHead>
+                  {!readOnly && <TableHead>Actions</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {steps.map((step, index) => (
+                  <TableRow key={index} className={index % 2 === 1 ? 'bg-muted/50' : ''}>
+                    <TableCell>
+                      {readOnly ? (
+                        <div className="text-sm">{step.time}</div>
+                      ) : (
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={step.time}
+                          onChange={(e) => handleStepChange(index, 'time', e.target.value)}
+                          className="h-8"
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {readOnly ? (
+                        <div className="text-sm">{step.percent_a}%</div>
+                      ) : (
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={step.percent_a}
+                          onChange={(e) => handleStepChange(index, 'percent_a', e.target.value)}
+                          className="h-8"
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {readOnly ? (
+                        <div className="text-sm">{step.percent_b}%</div>
+                      ) : (
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={step.percent_b}
+                          onChange={(e) => handleStepChange(index, 'percent_b', e.target.value)}
+                          className="h-8"
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {readOnly ? (
+                        <div className="text-sm">{step.flow_rate}</div>
+                      ) : (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={step.flow_rate}
+                          onChange={(e) => handleStepChange(index, 'flow_rate', e.target.value)}
+                          className="h-8"
+                        />
+                      )}
+                    </TableCell>
+                    {!readOnly && (
+                      <TableCell>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeStep(index)}
+                          disabled={steps.length === 1}
+                          className="h-8"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
             
             {!readOnly && (
               <Button
