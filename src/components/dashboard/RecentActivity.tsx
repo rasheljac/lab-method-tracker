@@ -32,7 +32,7 @@ export const RecentActivity = () => {
         }
       });
       
-      return Array.from(batchMap.values()).slice(0, 5);
+      return Array.from(batchMap.values()).slice(0, 3);
     },
   });
 
@@ -43,7 +43,7 @@ export const RecentActivity = () => {
         .from('methods')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(3);
+        .limit(2);
       
       if (error) throw error;
       return data;
@@ -57,7 +57,7 @@ export const RecentActivity = () => {
         .from('maintenance_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(3);
+        .limit(2);
       
       if (error) throw error;
       return data;
@@ -72,7 +72,7 @@ export const RecentActivity = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
+            {[...Array(7)].map((_, i) => (
               <div key={i} className="h-12 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -106,7 +106,7 @@ export const RecentActivity = () => {
       time: maintenance.created_at,
       success: true,
     })) || []),
-  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 8);
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 7);
 
   return (
     <Card>

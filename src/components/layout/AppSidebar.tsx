@@ -18,7 +18,8 @@ import {
   Pill, 
   Activity, 
   Shield, 
-  Wrench 
+  Wrench,
+  ScrollText
 } from 'lucide-react'
 
 interface AppSidebarProps {
@@ -36,6 +37,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     { id: 'metabolites', label: 'Metabolites', icon: Pill },
     { id: 'injections', label: 'Injections', icon: Activity },
     { id: 'maintenance', label: 'Maintenance', icon: Wrench },
+    { id: 'activity-logs', label: 'Activity Logs', icon: ScrollText },
   ]
 
   // Add admin panel if user is admin

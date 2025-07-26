@@ -12,6 +12,7 @@ import { Metabolites } from '@/components/metabolites/Metabolites';
 import { Injections } from '@/components/injections/Injections';
 import { Maintenance } from '@/components/maintenance/Maintenance';
 import { AdminPanel } from '@/components/admin/AdminPanel';
+import { ActivityLogs } from '@/components/activity/ActivityLogs';
 import {
   SidebarProvider,
   SidebarInset,
@@ -51,6 +52,8 @@ const Index = () => {
         return <Injections />;
       case 'maintenance':
         return <Maintenance />;
+      case 'activity-logs':
+        return <ActivityLogs />;
       case 'admin':
         return <AdminPanel />;
       default:
