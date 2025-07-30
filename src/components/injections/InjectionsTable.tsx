@@ -1,11 +1,12 @@
-
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { InjectionBatchDetailsDialog } from './InjectionBatchDetailsDialog';
 
 interface InjectionsTableProps {
   onEdit: (injection: any) => void;
@@ -14,6 +15,9 @@ interface InjectionsTableProps {
 }
 
 export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProps) => {
+  const [selectedBatch, setSelectedBatch] = useState<any>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+
   const { data: injectionBatches, isLoading, error } = useQuery({
     queryKey: ['injections'],
     queryFn: async () => {
@@ -137,84 +141,105 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
     onEdit(batch.injections[0]);
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Injection Batches</h3>
-        <Button onClick={onAdd}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Injection Batch
-        </Button>
-      </div>
+  const handleViewDetails = (batch: any) => {
+    setSelectedBatch(batch);
+    setDetailsDialogOpen(true);
+  };
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Injection Range</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Column</TableHead>
-              <TableHead>Sample ID</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Batch Size</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {injectionBatches?.length === 0 ? (
+  return (
+    <>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Injection Batches</h3>
+          <Button onClick={onAdd}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Injection Batch
+          </Button>
+        </div>
+
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                  No injection batches found. Add your first injection batch to get started.
-                </TableCell>
+                <TableHead>Injection Range</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Column</TableHead>
+                <TableHead>Sample ID</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Batch Size</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ) : (
-              injectionBatches?.map((batch) => (
-                <TableRow key={batch.batch_id}>
-                  <TableCell className="font-medium">
-                    {batch.min_injection_number === batch.max_injection_number 
-                      ? `#${batch.min_injection_number}`
-                      : `#${batch.min_injection_number}-${batch.max_injection_number}`
-                    }
-                  </TableCell>
-                  <TableCell>{batch.method_name}</TableCell>
-                  <TableCell>{batch.column_name}</TableCell>
-                  <TableCell>{batch.sample_id}</TableCell>
-                  <TableCell>
-                    {new Date(batch.injection_date).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{batch.actual_batch_size} injections</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={batch.run_successful ? 'default' : 'destructive'}>
-                      {batch.run_successful ? 'Success' : 'Failed'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditBatch(batch)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteBatch(batch)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {injectionBatches?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    No injection batches found. Add your first injection batch to get started.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                injectionBatches?.map((batch) => (
+                  <TableRow key={batch.batch_id}>
+                    <TableCell className="font-medium">
+                      {batch.min_injection_number === batch.max_injection_number 
+                        ? `#${batch.min_injection_number}`
+                        : `#${batch.min_injection_number}-${batch.max_injection_number}`
+                      }
+                    </TableCell>
+                    <TableCell>{batch.method_name}</TableCell>
+                    <TableCell>{batch.column_name}</TableCell>
+                    <TableCell>{batch.sample_id}</TableCell>
+                    <TableCell>
+                      {new Date(batch.injection_date).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{batch.actual_batch_size} injections</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={batch.run_successful ? 'default' : 'destructive'}>
+                        {batch.run_successful ? 'Success' : 'Failed'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewDetails(batch)}
+                          title="View details and solvent usage"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditBatch(batch)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteBatch(batch)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
+
+      <InjectionBatchDetailsDialog
+        batch={selectedBatch}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+      />
+    </>
   );
 };
