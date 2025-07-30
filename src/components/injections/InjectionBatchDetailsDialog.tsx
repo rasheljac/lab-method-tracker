@@ -2,7 +2,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { calculateSolventUsage, SolventUsage } from '@/utils/solventCalculations';
+import { calculateSolventUsage, SolventUsage, GradientStep } from '@/utils/solventCalculations';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +27,18 @@ interface InjectionBatchDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Type guard to check if data is a valid GradientStep array
+const isGradientStepArray = (data: any): data is GradientStep[] => {
+  return Array.isArray(data) && data.every(step => 
+    typeof step === 'object' && 
+    step !== null &&
+    typeof step.time === 'number' &&
+    typeof step.percent_a === 'number' &&
+    typeof step.percent_b === 'number' &&
+    typeof step.flow_rate === 'number'
+  );
+};
+
 export const InjectionBatchDetailsDialog = ({ 
   batch, 
   open, 
@@ -49,11 +61,16 @@ export const InjectionBatchDetailsDialog = ({
     enabled: !!batch?.injections?.[0]?.method_id
   });
 
-  const solventUsage: SolventUsage = methodDetails?.gradient_steps 
+  // Safely extract and validate gradient steps
+  const gradientSteps: GradientStep[] = methodDetails?.gradient_steps && isGradientStepArray(methodDetails.gradient_steps) 
+    ? methodDetails.gradient_steps 
+    : [];
+
+  const solventUsage: SolventUsage = gradientSteps.length > 0
     ? calculateSolventUsage(
-        methodDetails.gradient_steps,
+        gradientSteps,
         batch?.actual_batch_size || 0,
-        methodDetails.injection_volume || 0
+        methodDetails?.injection_volume || 0
       )
     : { solventA_mL: 0, solventB_mL: 0, totalVolume_mL: 0 };
 
@@ -133,7 +150,7 @@ export const InjectionBatchDetailsDialog = ({
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-4 w-1/2" />
                 </div>
-              ) : methodDetails?.gradient_steps ? (
+              ) : gradientSteps.length > 0 ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
@@ -143,7 +160,7 @@ export const InjectionBatchDetailsDialog = ({
                       </div>
                       <div className="text-sm text-blue-700">Mobile Phase A</div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {methodDetails.mobile_phase_a || 'Solvent A'}
+                        {methodDetails?.mobile_phase_a || 'Solvent A'}
                       </div>
                     </div>
                     
@@ -154,7 +171,7 @@ export const InjectionBatchDetailsDialog = ({
                       </div>
                       <div className="text-sm text-red-700">Mobile Phase B</div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {methodDetails.mobile_phase_b || 'Solvent B'}
+                        {methodDetails?.mobile_phase_b || 'Solvent B'}
                       </div>
                     </div>
                     
@@ -171,9 +188,9 @@ export const InjectionBatchDetailsDialog = ({
                   </div>
                   
                   <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
-                    <strong>Calculation based on:</strong> Method gradient profile ({methodDetails.gradient_steps?.length || 0} steps), 
+                    <strong>Calculation based on:</strong> Method gradient profile ({gradientSteps.length} steps), 
                     flow rates, and batch size of {batch.actual_batch_size} injections.
-                    {methodDetails.injection_volume && ` Injection volume: ${methodDetails.injection_volume} μL per injection.`}
+                    {methodDetails?.injection_volume && ` Injection volume: ${methodDetails.injection_volume} μL per injection.`}
                   </div>
                 </div>
               ) : (

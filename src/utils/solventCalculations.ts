@@ -12,6 +12,9 @@ export interface SolventUsage {
   totalVolume_mL: number;
 }
 
+// Export the GradientStep interface so it can be imported elsewhere
+export type { GradientStep };
+
 export const calculateSolventUsage = (
   gradientSteps: GradientStep[],
   batchSize: number,
