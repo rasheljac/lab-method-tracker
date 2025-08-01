@@ -29,7 +29,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
     temperature_reading: injection?.temperature_reading || '',
     pressure_reading: injection?.pressure_reading || '',
     notes: injection?.notes || '',
-    quantity: 1,
+    batch_quantity: 1, // Use batch_quantity instead of quantity
   });
 
   const [methods, setMethods] = useState<any[]>([]);
@@ -102,12 +102,15 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
       if (injection) {
         // Update existing injection
         const submitData = {
-          ...formData,
-          user_id: user.id,
+          method_id: formData.method_id,
+          column_id: formData.column_id,
+          sample_id: formData.sample_id,
           injection_number: parseInt(formData.injection_number),
           temperature_reading: formData.temperature_reading ? parseInt(formData.temperature_reading) : null,
           pressure_reading: formData.pressure_reading ? parseInt(formData.pressure_reading) : null,
           injection_date: new Date(formData.injection_date).toISOString(),
+          run_successful: formData.run_successful,
+          notes: formData.notes,
         };
 
         const { error } = await supabase
@@ -123,8 +126,8 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
         });
       } else {
         // Create new injection batch
-        const quantity = parseInt(formData.quantity.toString());
-        const batchId = uuidv4(); // Generate a single batch ID for all injections
+        const quantity = parseInt(formData.batch_quantity.toString());
+        const batchId = uuidv4();
         const injections = [];
         
         for (let i = 0; i < quantity; i++) {
@@ -226,14 +229,14 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
               
               {!injection && (
                 <div>
-                  <Label htmlFor="quantity">Batch Size *</Label>
+                  <Label htmlFor="batch_quantity">Batch Size *</Label>
                   <Input
-                    id="quantity"
+                    id="batch_quantity"
                     type="number"
                     min="1"
                     max="100"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                    value={formData.batch_quantity}
+                    onChange={(e) => setFormData({ ...formData, batch_quantity: parseInt(e.target.value) || 1 })}
                     required
                   />
                   <p className="text-sm text-gray-500 mt-1">
@@ -323,7 +326,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : injection ? 'Update Injection Batch' : `Create Batch of ${formData.quantity}`}
+                {loading ? 'Saving...' : injection ? 'Update Injection Batch' : `Create Batch of ${formData.batch_quantity}`}
               </Button>
             </div>
           </form>

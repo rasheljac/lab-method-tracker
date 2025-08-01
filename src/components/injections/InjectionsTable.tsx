@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InjectionBatchDetailsDialog } from './InjectionBatchDetailsDialog';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface InjectionsTableProps {
   onEdit: (injection: any) => void;
@@ -17,6 +20,8 @@ interface InjectionsTableProps {
 export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProps) => {
   const [selectedBatch, setSelectedBatch] = useState<any>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: injectionBatches, isLoading, error } = useQuery({
     queryKey: ['injections'],
@@ -57,6 +62,7 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
             injection_date: injection.injection_date,
             method_name: injection.methods?.name || 'Unknown',
             column_name: injection.columns?.name || 'Unknown',
+            column_id: injection.column_id,
             actual_batch_size: 1, // Count actual injections
             min_injection_number: injection.injection_number,
             max_injection_number: injection.injection_number,
@@ -130,9 +136,68 @@ export const InjectionsTable = ({ onEdit, onDelete, onAdd }: InjectionsTableProp
   const handleDeleteBatch = async (batch: any) => {
     if (!confirm(`Are you sure you want to delete this batch of ${batch.actual_batch_size} injections?`)) return;
     
-    // Delete all injections in the batch
-    for (const injection of batch.injections) {
-      await onDelete(injection.id);
+    try {
+      console.log('Deleting batch:', batch.batch_id, 'with', batch.actual_batch_size, 'injections');
+      
+      // Get the column info before deleting
+      const { data: columnData, error: columnFetchError } = await supabase
+        .from('columns')
+        .select('total_injections, name')
+        .eq('id', batch.column_id)
+        .single();
+      
+      if (columnFetchError) throw columnFetchError;
+      
+      // Delete all injections in the batch
+      const { error: deleteError } = await supabase
+        .from('injections')
+        .delete()
+        .eq('batch_id', batch.batch_id);
+      
+      if (deleteError) throw deleteError;
+      
+      console.log(`Deleted batch ${batch.batch_id} with ${batch.actual_batch_size} injections`);
+      
+      // Update column injection count by decrementing the batch size
+      if (columnData) {
+        const newCount = Math.max(0, columnData.total_injections - batch.actual_batch_size);
+        console.log(`Updating column ${columnData.name} from ${columnData.total_injections} to ${newCount} injections`);
+        
+        const { error: columnUpdateError } = await supabase
+          .from('columns')
+          .update({ 
+            total_injections: newCount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', batch.column_id);
+        
+        if (columnUpdateError) throw columnUpdateError;
+        
+        console.log(`Successfully updated column ${columnData.name} injection count to ${newCount}`);
+      }
+      
+      // Invalidate all relevant queries to refresh the UI
+      console.log('Invalidating queries to refresh UI');
+      await queryClient.invalidateQueries({ queryKey: ['injections'] });
+      await queryClient.invalidateQueries({ queryKey: ['column-lifetime'] });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      await queryClient.invalidateQueries({ queryKey: ['columns'] });
+      
+      // Force refetch to ensure fresh data
+      await queryClient.refetchQueries({ queryKey: ['column-lifetime'] });
+      await queryClient.refetchQueries({ queryKey: ['dashboard-stats'] });
+      
+      toast({
+        title: 'Success',
+        description: `Injection batch with ${batch.actual_batch_size} injections deleted successfully!`,
+      });
+    } catch (error: any) {
+      console.error('Error deleting injection batch:', error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   };
 
