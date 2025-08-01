@@ -29,7 +29,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
     temperature_reading: injection?.temperature_reading || '',
     pressure_reading: injection?.pressure_reading || '',
     notes: injection?.notes || '',
-    batch_quantity: 1, // Use batch_quantity instead of quantity
+    batch_quantity: 1,
   });
 
   const [methods, setMethods] = useState<any[]>([]);
@@ -100,7 +100,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
       if (!user) throw new Error('No user found');
 
       if (injection) {
-        // Update existing injection
+        // Update existing injection - make sure run_successful is properly handled
         const submitData = {
           method_id: formData.method_id,
           column_id: formData.column_id,
@@ -109,9 +109,11 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
           temperature_reading: formData.temperature_reading ? parseInt(formData.temperature_reading) : null,
           pressure_reading: formData.pressure_reading ? parseInt(formData.pressure_reading) : null,
           injection_date: new Date(formData.injection_date).toISOString(),
-          run_successful: formData.run_successful,
+          run_successful: formData.run_successful, // Ensure this is properly set
           notes: formData.notes,
         };
+
+        console.log('Updating injection with data:', submitData);
 
         const { error } = await supabase
           .from('injections')
@@ -164,6 +166,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
       await queryClient.invalidateQueries({ queryKey: ['columns'] });
       onClose();
     } catch (error: any) {
+      console.error('Error saving injection:', error);
       toast({
         title: 'Error',
         description: error.message,
