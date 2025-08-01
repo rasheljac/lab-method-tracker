@@ -109,6 +109,7 @@ export type Database = {
           batch_number: string | null
           column_id: string
           created_at: string
+          expected_lifetime_injections: number | null
           id: string
           installation_injection_count: number
           installed_date: string
@@ -123,6 +124,7 @@ export type Database = {
           batch_number?: string | null
           column_id: string
           created_at?: string
+          expected_lifetime_injections?: number | null
           id?: string
           installation_injection_count?: number
           installed_date: string
@@ -137,6 +139,7 @@ export type Database = {
           batch_number?: string | null
           column_id?: string
           created_at?: string
+          expected_lifetime_injections?: number | null
           id?: string
           installation_injection_count?: number
           installed_date?: string
