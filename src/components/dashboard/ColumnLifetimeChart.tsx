@@ -241,7 +241,6 @@ export const ColumnLifetimeChart = () => {
                                 {guardStatus.percent.toFixed(1)}% used 
                                 ({column.total_injections - currentGuardColumn.installation_injection_count}/{currentGuardColumn.expected_lifetime_injections || getGuardColumnLifespan(column.id)})
                               </p>
-                              <p className="text-xs text-gray-600">Part: {currentGuardColumn.part_number}</p>
                             </div>
                           )}
                           {guardStatus.status === 'none' && (
