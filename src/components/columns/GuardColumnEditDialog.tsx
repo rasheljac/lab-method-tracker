@@ -19,6 +19,7 @@ interface GuardColumn {
   installation_injection_count: number;
   removal_injection_count: number | null;
   notes: string | null;
+  expected_lifetime_injections?: number | null;
 }
 
 interface GuardColumnEditDialogProps {
@@ -41,6 +42,7 @@ export const GuardColumnEditDialog = ({
     removed_date: guardColumn.removed_date || '',
     installation_injection_count: guardColumn.installation_injection_count,
     removal_injection_count: guardColumn.removal_injection_count || 0,
+    expected_lifetime_injections: guardColumn.expected_lifetime_injections || 1000,
     notes: guardColumn.notes || '',
   });
   const [loading, setLoading] = useState(false);
@@ -57,6 +59,7 @@ export const GuardColumnEditDialog = ({
         batch_number: formData.batch_number || null,
         installed_date: formData.installed_date,
         installation_injection_count: formData.installation_injection_count,
+        expected_lifetime_injections: formData.expected_lifetime_injections,
         notes: formData.notes || null
       };
 
@@ -164,6 +167,16 @@ export const GuardColumnEditDialog = ({
                   type="number"
                   value={formData.installation_injection_count}
                   onChange={(e) => setFormData({ ...formData, installation_injection_count: parseInt(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="expected_lifetime_injections">Expected Lifetime Injections</Label>
+                <Input
+                  id="expected_lifetime_injections"
+                  type="number"
+                  value={formData.expected_lifetime_injections}
+                  onChange={(e) => setFormData({ ...formData, expected_lifetime_injections: parseInt(e.target.value) })}
+                  placeholder="e.g., 1000"
                 />
               </div>
               <div>
