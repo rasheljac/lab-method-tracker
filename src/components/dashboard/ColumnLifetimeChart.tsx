@@ -14,7 +14,7 @@ interface GuardColumn {
   removed_date: string | null;
   installation_injection_count: number;
   removal_injection_count: number | null;
-  expected_lifetime_injections: number;
+  expected_lifetime_injections: number | null;
   notes: string | null;
 }
 
@@ -54,7 +54,7 @@ export const ColumnLifetimeChart = () => {
       for (const column of columnsData || []) {
         const { data: guardData, error: guardError } = await supabase
           .from('guard_columns')
-          .select('*')
+          .select('id, part_number, batch_number, installed_date, removed_date, installation_injection_count, removal_injection_count, expected_lifetime_injections, notes')
           .eq('column_id', column.id)
           .eq('user_id', user.id)
           .order('installed_date', { ascending: false });
