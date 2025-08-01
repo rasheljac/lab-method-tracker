@@ -100,7 +100,7 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
       if (!user) throw new Error('No user found');
 
       if (injection) {
-        // Update existing injection - make sure run_successful is properly handled
+        // Update existing injection batch - update ALL injections in the batch
         const submitData = {
           method_id: formData.method_id,
           column_id: formData.column_id,
@@ -109,22 +109,24 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
           temperature_reading: formData.temperature_reading ? parseInt(formData.temperature_reading) : null,
           pressure_reading: formData.pressure_reading ? parseInt(formData.pressure_reading) : null,
           injection_date: new Date(formData.injection_date).toISOString(),
-          run_successful: formData.run_successful, // Ensure this is properly set
+          run_successful: formData.run_successful,
           notes: formData.notes,
         };
 
-        console.log('Updating injection with data:', submitData);
+        console.log('Updating injection batch with data:', submitData);
+        console.log('Batch ID:', injection.batch_id);
 
+        // Update ALL injections in the batch, not just the single injection
         const { error } = await supabase
           .from('injections')
           .update(submitData)
-          .eq('id', injection.id);
+          .eq('batch_id', injection.batch_id); // Update by batch_id instead of individual injection id
         
         if (error) throw error;
         
         toast({
           title: 'Success',
-          description: 'Injection updated successfully!',
+          description: 'Injection batch updated successfully!',
         });
       } else {
         // Create new injection batch
