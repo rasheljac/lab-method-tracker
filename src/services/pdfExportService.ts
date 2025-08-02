@@ -151,7 +151,7 @@ export const generateStatisticsPDF = async (
         onclone: (clonedDoc) => {
           // Ensure chart is fully visible in clone
           const clonedChart = clonedDoc.querySelector('[data-chart]');
-          if (clonedChart) {
+          if (clonedChart instanceof HTMLElement) {
             clonedChart.style.overflow = 'visible';
             clonedChart.style.height = 'auto';
           }
