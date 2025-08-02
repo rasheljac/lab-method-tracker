@@ -22,10 +22,80 @@ export interface DashboardStats {
   avg_column_usage: number;
 }
 
+// Helper function to wait for charts to be fully rendered
+const waitForChartsToRender = async (elements: HTMLElement[]): Promise<void> => {
+  return new Promise((resolve) => {
+    let completedChecks = 0;
+    const totalChecks = elements.length;
+    
+    if (totalChecks === 0) {
+      resolve();
+      return;
+    }
+    
+    elements.forEach((element) => {
+      // Wait for SVG elements within charts to be rendered
+      const checkRendered = () => {
+        const svgElements = element.querySelectorAll('svg');
+        const hasContent = svgElements.length > 0 && 
+          Array.from(svgElements).some(svg => svg.children.length > 0);
+        
+        if (hasContent) {
+          completedChecks++;
+          if (completedChecks === totalChecks) {
+            // Add small delay to ensure complete rendering
+            setTimeout(resolve, 500);
+          }
+        } else {
+          // Retry after a short delay
+          setTimeout(checkRendered, 100);
+        }
+      };
+      
+      checkRendered();
+    });
+    
+    // Fallback timeout to prevent infinite waiting
+    setTimeout(resolve, 3000);
+  });
+};
+
+// Helper function to find chart elements more reliably
+const findChartElements = (): HTMLElement[] => {
+  const chartElements: HTMLElement[] = [];
+  
+  // Look for various chart container selectors
+  const selectors = [
+    '[data-chart]',
+    '.recharts-wrapper',
+    '.recharts-responsive-container',
+    '[class*="recharts"]',
+    '.chart-container'
+  ];
+  
+  selectors.forEach(selector => {
+    const elements = document.querySelectorAll(selector);
+    elements.forEach(element => {
+      if (element instanceof HTMLElement && !chartElements.includes(element)) {
+        // Make sure the element has actual chart content
+        const hasChartContent = element.querySelector('svg') || 
+                               element.querySelector('[class*="recharts"]') ||
+                               element.querySelector('canvas');
+        if (hasChartContent) {
+          chartElements.push(element);
+        }
+      }
+    });
+  });
+  
+  console.log('Found chart elements:', chartElements.length, chartElements);
+  return chartElements;
+};
+
 export const generateStatisticsPDF = async (
   stats: DashboardStats,
   columns: ColumnAnalytics[],
-  chartElements: HTMLElement[]
+  chartElements?: HTMLElement[]
 ) => {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.width;
@@ -33,6 +103,12 @@ export const generateStatisticsPDF = async (
   const margin = 20;
   const contentWidth = pageWidth - (margin * 2);
   let currentY = margin;
+
+  // Find chart elements if not provided
+  const chartsToCapture = chartElements || findChartElements();
+  
+  // Wait for charts to be fully rendered
+  await waitForChartsToRender(chartsToCapture);
 
   // Add logo and header
   try {
@@ -43,19 +119,15 @@ export const generateStatisticsPDF = async (
     await new Promise((resolve, reject) => {
       logoImg.onload = resolve;
       logoImg.onerror = reject;
-      // Add timeout to prevent hanging
       setTimeout(reject, 5000);
     });
 
-    // Calculate logo dimensions to maintain aspect ratio
     const logoAspectRatio = logoImg.naturalWidth / logoImg.naturalHeight;
     const logoHeight = 15;
     const logoWidth = logoHeight * logoAspectRatio;
 
-    // Add logo with proper aspect ratio
     pdf.addImage(logoImg, 'PNG', margin, currentY, logoWidth, logoHeight);
     
-    // Position title next to logo with proper spacing
     pdf.setFontSize(20);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Kapelczak MS Visualizer', margin + logoWidth + 10, currentY + 8);
@@ -67,7 +139,6 @@ export const generateStatisticsPDF = async (
     currentY += Math.max(logoHeight, 20) + 10;
   } catch (error) {
     console.log('Logo loading failed, continuing without logo');
-    // Title without logo
     pdf.setFontSize(20);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Kapelczak MS Visualizer', margin, currentY);
@@ -123,69 +194,95 @@ export const generateStatisticsPDF = async (
   currentY += Math.ceil(statsData.length / 3) * rowHeight + 15;
 
   // Charts Section
-  pdf.setFontSize(14);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Analytics Charts', margin, currentY);
-  currentY += 10;
+  if (chartsToCapture.length > 0) {
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Analytics Charts', margin, currentY);
+    currentY += 10;
 
-  // Add charts with improved rendering
-  for (let i = 0; i < chartElements.length; i++) {
-    const chartElement = chartElements[i];
-    
-    // Check if we need a new page
-    if (currentY > pageHeight - 120) {
-      pdf.addPage();
-      currentY = margin;
-    }
-
-    try {
-      // Improve chart capture settings
-      const canvas = await html2canvas(chartElement, {
-        backgroundColor: '#ffffff',
-        scale: 1.5, // Reduced scale to prevent memory issues but maintain quality
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        foreignObjectRendering: true,
-        imageTimeout: 10000,
-        onclone: (clonedDoc) => {
-          // Ensure chart is fully visible in clone
-          const clonedChart = clonedDoc.querySelector('[data-chart]');
-          if (clonedChart instanceof HTMLElement) {
-            clonedChart.style.overflow = 'visible';
-            clonedChart.style.height = 'auto';
-          }
-        }
-      });
-
-      const imgData = canvas.toDataURL('image/png', 0.95);
+    // Add charts with improved rendering
+    for (let i = 0; i < chartsToCapture.length; i++) {
+      const chartElement = chartsToCapture[i];
       
-      // Calculate proper dimensions to fit page width
-      const maxWidth = contentWidth;
-      const maxHeight = 80; // Maximum height for charts
-      const canvasAspectRatio = canvas.width / canvas.height;
-      
-      let imgWidth = maxWidth;
-      let imgHeight = imgWidth / canvasAspectRatio;
-      
-      // If height exceeds max, adjust based on height
-      if (imgHeight > maxHeight) {
-        imgHeight = maxHeight;
-        imgWidth = imgHeight * canvasAspectRatio;
+      // Check if we need a new page
+      if (currentY > pageHeight - 120) {
+        pdf.addPage();
+        currentY = margin;
       }
 
-      // Center the image if it's smaller than content width
-      const xPosition = margin + (contentWidth - imgWidth) / 2;
+      try {
+        console.log(`Capturing chart ${i + 1}/${chartsToCapture.length}`, chartElement);
+        
+        // Improved chart capture settings with better SVG handling
+        const canvas = await html2canvas(chartElement, {
+          backgroundColor: '#ffffff',
+          scale: 2, // Higher scale for better quality
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          foreignObjectRendering: true,
+          imageTimeout: 15000,
+          width: chartElement.offsetWidth,
+          height: chartElement.offsetHeight,
+          onclone: (clonedDoc) => {
+            // Ensure all chart elements are visible and properly sized
+            const clonedElement = clonedDoc.querySelector(`[data-testid="${chartElement.getAttribute('data-testid')}"]`) ||
+                                  clonedDoc.body.querySelector('*');
+            
+            if (clonedElement instanceof HTMLElement) {
+              clonedElement.style.overflow = 'visible';
+              clonedElement.style.height = 'auto';
+              clonedElement.style.minHeight = chartElement.offsetHeight + 'px';
+              clonedElement.style.width = chartElement.offsetWidth + 'px';
+              
+              // Ensure SVG elements are visible
+              const svgElements = clonedElement.querySelectorAll('svg');
+              svgElements.forEach(svg => {
+                if (svg instanceof SVGElement) {
+                  svg.style.overflow = 'visible';
+                  svg.setAttribute('width', chartElement.offsetWidth.toString());
+                  svg.setAttribute('height', chartElement.offsetHeight.toString());
+                }
+              });
+            }
+          }
+        });
 
-      pdf.addImage(imgData, 'PNG', xPosition, currentY, imgWidth, imgHeight);
-      currentY += imgHeight + 15;
-      
-    } catch (error) {
-      console.error('Error capturing chart:', error);
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'italic');
-      pdf.text('Chart could not be captured', margin, currentY);
-      currentY += 15;
+        if (canvas.width === 0 || canvas.height === 0) {
+          throw new Error('Canvas has no dimensions');
+        }
+
+        const imgData = canvas.toDataURL('image/png', 0.95);
+        
+        // Calculate proper dimensions to fit page width
+        const maxWidth = contentWidth;
+        const maxHeight = 100; // Maximum height for charts
+        const canvasAspectRatio = canvas.width / canvas.height;
+        
+        let imgWidth = maxWidth;
+        let imgHeight = imgWidth / canvasAspectRatio;
+        
+        // If height exceeds max, adjust based on height
+        if (imgHeight > maxHeight) {
+          imgHeight = maxHeight;
+          imgWidth = imgHeight * canvasAspectRatio;
+        }
+
+        // Center the image if it's smaller than content width
+        const xPosition = margin + (contentWidth - imgWidth) / 2;
+
+        pdf.addImage(imgData, 'PNG', xPosition, currentY, imgWidth, imgHeight);
+        currentY += imgHeight + 15;
+        
+        console.log(`Chart ${i + 1} captured successfully`);
+        
+      } catch (error) {
+        console.error(`Error capturing chart ${i + 1}:`, error);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text(`Chart ${i + 1} could not be captured (${error.message || 'Unknown error'})`, margin, currentY);
+        currentY += 15;
+      }
     }
   }
 
