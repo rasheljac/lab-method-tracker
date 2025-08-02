@@ -168,7 +168,7 @@ export const ColumnLifetimeChart = () => {
 
   return (
     <TooltipProvider>
-      <Card>
+      <Card data-chart="column-lifetime-chart">
         <CardHeader>
           <CardTitle>Column Lifetime Status</CardTitle>
         </CardHeader>
