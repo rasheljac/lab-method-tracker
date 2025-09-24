@@ -74,6 +74,11 @@ export const InjectionBatchDetailsDialog = ({
       )
     : { solventA_mL: 0, solventB_mL: 0, totalVolume_mL: 0 };
 
+  // Calculate estimated run time in hours
+  const estimatedRunTimeHours = methodDetails?.run_time 
+    ? (methodDetails.run_time * batch.actual_batch_size) / 60
+    : null;
+
   if (!batch) return null;
 
   return (
@@ -132,6 +137,14 @@ export const InjectionBatchDetailsDialog = ({
                   {batch.actual_batch_size} injections
                 </Badge>
               </div>
+              {estimatedRunTimeHours && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Estimated Run Time</label>
+                  <Badge variant="secondary" className="ml-2">
+                    {estimatedRunTimeHours.toFixed(1)} hours
+                  </Badge>
+                </div>
+              )}
             </CardContent>
           </Card>
 
