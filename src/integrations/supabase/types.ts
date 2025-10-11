@@ -7,13 +7,79 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      column_history: {
+        Row: {
+          column_id: string
+          column_name: string
+          created_at: string
+          dimensions: string | null
+          estimated_lifetime_injections: number | null
+          first_use_date: string | null
+          id: string
+          manufacturer: string | null
+          max_pressure: number | null
+          max_temperature: number | null
+          notes: string | null
+          part_number: string | null
+          particle_size: string | null
+          purchase_date: string | null
+          replacement_date: string
+          replacement_reason: string | null
+          stationary_phase: string | null
+          total_injections_at_replacement: number
+          user_id: string
+        }
+        Insert: {
+          column_id: string
+          column_name: string
+          created_at?: string
+          dimensions?: string | null
+          estimated_lifetime_injections?: number | null
+          first_use_date?: string | null
+          id?: string
+          manufacturer?: string | null
+          max_pressure?: number | null
+          max_temperature?: number | null
+          notes?: string | null
+          part_number?: string | null
+          particle_size?: string | null
+          purchase_date?: string | null
+          replacement_date: string
+          replacement_reason?: string | null
+          stationary_phase?: string | null
+          total_injections_at_replacement: number
+          user_id: string
+        }
+        Update: {
+          column_id?: string
+          column_name?: string
+          created_at?: string
+          dimensions?: string | null
+          estimated_lifetime_injections?: number | null
+          first_use_date?: string | null
+          id?: string
+          manufacturer?: string | null
+          max_pressure?: number | null
+          max_temperature?: number | null
+          notes?: string | null
+          part_number?: string | null
+          particle_size?: string | null
+          purchase_date?: string | null
+          replacement_date?: string
+          replacement_reason?: string | null
+          stationary_phase?: string | null
+          total_injections_at_replacement?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       columns: {
         Row: {
           created_at: string | null
@@ -606,8 +672,8 @@ export type Database = {
       admin_create_user: {
         Args: {
           user_email: string
-          user_password: string
           user_full_name?: string
+          user_password: string
           user_role?: Database["public"]["Enums"]["app_role"]
         }
         Returns: Json
@@ -615,34 +681,34 @@ export type Database = {
       get_all_users_with_roles: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
+          created_at: string
+          department: string
           email: string
           full_name: string
+          id: string
           institution: string
           lab_name: string
-          phone: string
-          department: string
-          status: string
-          created_at: string
           last_login_at: string
+          phone: string
           roles: string[]
+          status: string
         }[]
       }
       get_dashboard_stats: {
         Args: { user_uuid: string }
         Returns: {
-          total_methods: number
-          total_columns: number
-          total_metabolites: number
           active_columns: number
-          total_injections: number
           avg_column_usage: number
+          total_columns: number
+          total_injections: number
+          total_metabolites: number
+          total_methods: number
         }[]
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }

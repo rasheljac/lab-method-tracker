@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2, RotateCcw, Shield } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, Shield, History } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnDetailsDialog } from './ColumnDetailsDialog';
 import { GuardColumnTracker } from './GuardColumnTracker';
+import { ColumnReplacementDialog } from './ColumnReplacementDialog';
+import { ColumnHistoryDialog } from './ColumnHistoryDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -21,6 +23,10 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
   const [selectedColumn, setSelectedColumn] = useState<any>(null);
   const [showColumnDetails, setShowColumnDetails] = useState(false);
   const [showGuardColumnTracker, setShowGuardColumnTracker] = useState<any>(null);
+  const [showReplacementDialog, setShowReplacementDialog] = useState(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [replacementColumn, setReplacementColumn] = useState<any>(null);
+  const [historyColumn, setHistoryColumn] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -50,38 +56,14 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
     setShowGuardColumnTracker(column);
   };
 
-  const handleResetInjectionCount = async (column: any) => {
-    if (!confirm(`Are you sure you want to reset the injection count for "${column.name}"? This will set the count back to 0.`)) {
-      return;
-    }
+  const handleReplaceColumn = (column: any) => {
+    setReplacementColumn(column);
+    setShowReplacementDialog(true);
+  };
 
-    try {
-      const { error } = await supabase
-        .from('columns')
-        .update({ 
-          total_injections: 0,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', column.id);
-
-      if (error) throw error;
-
-      // Invalidate queries to refresh the UI
-      await queryClient.invalidateQueries({ queryKey: ['columns'] });
-      await queryClient.invalidateQueries({ queryKey: ['column-lifetime'] });
-      await queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-
-      toast({
-        title: 'Success',
-        description: `Injection count reset for "${column.name}"`,
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
+  const handleShowHistory = (column: any) => {
+    setHistoryColumn(column);
+    setShowHistoryDialog(true);
   };
 
   if (showGuardColumnTracker) {
@@ -206,10 +188,18 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleResetInjectionCount(column)}
-                            title="Reset injection count"
+                            onClick={() => handleShowHistory(column)}
+                            title="View replacement history"
                           >
-                            <RotateCcw className="h-4 w-4" />
+                            <History className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleReplaceColumn(column)}
+                            title="Replace column"
+                          >
+                            <RefreshCw className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -240,6 +230,18 @@ export const ColumnsTable = ({ onEdit, onDelete, onAdd }: ColumnsTableProps) => 
         column={selectedColumn}
         open={showColumnDetails}
         onOpenChange={setShowColumnDetails}
+      />
+      
+      <ColumnReplacementDialog
+        column={replacementColumn}
+        open={showReplacementDialog}
+        onOpenChange={setShowReplacementDialog}
+      />
+      
+      <ColumnHistoryDialog
+        column={historyColumn}
+        open={showHistoryDialog}
+        onOpenChange={setShowHistoryDialog}
       />
     </>
   );
