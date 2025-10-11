@@ -69,15 +69,14 @@ export const InjectionForm = ({ injection, onClose }: InjectionFormProps) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: lastInjection } = await supabase
-          .from('injections')
-          .select('injection_number')
-          .eq('user_id', user.id)
-          .eq('column_id', formData.column_id)
-          .order('injection_number', { ascending: false })
-          .limit(1);
+        // Get the column's current total_injections count (which resets to 0 after replacement)
+        const { data: columnData } = await supabase
+          .from('columns')
+          .select('total_injections')
+          .eq('id', formData.column_id)
+          .single();
 
-        const nextNumber = lastInjection && lastInjection.length > 0 ? lastInjection[0].injection_number + 1 : 1;
+        const nextNumber = columnData ? columnData.total_injections + 1 : 1;
         setNextInjectionNumber(nextNumber);
         
         if (!injection) {
