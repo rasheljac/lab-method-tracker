@@ -190,30 +190,37 @@ export const generateStatisticsPDF = async (
       try {
         console.log(`Capturing chart ${i + 1}/${chartsToCapture.length}`, chartElement);
         
+        // Get the actual dimensions we want to capture
+        const elementWidth = chartElement.scrollWidth || chartElement.offsetWidth;
+        const elementHeight = chartElement.scrollHeight || chartElement.offsetHeight;
+        
+        console.log('Element dimensions:', { width: elementWidth, height: elementHeight });
+        
         // Improved chart capture settings with better rendering
         const canvas = await html2canvas(chartElement, {
           backgroundColor: '#ffffff',
-          scale: 3, // Higher scale for better quality
+          scale: 2, // Reasonable scale for quality vs size
           logging: true,
           useCORS: true,
           allowTaint: false,
           foreignObjectRendering: false,
           imageTimeout: 0,
           removeContainer: false,
-          width: chartElement.scrollWidth,
-          height: chartElement.scrollHeight,
-          windowWidth: chartElement.scrollWidth,
-          windowHeight: chartElement.scrollHeight,
+          width: elementWidth,
+          height: elementHeight,
+          windowWidth: elementWidth,
+          windowHeight: elementHeight,
           onclone: (clonedDoc, clonedElement) => {
-            // Find the corresponding element in the cloned document
+            // Find all chart elements in the cloned document
             const clonedCharts = clonedDoc.querySelectorAll('[data-chart]');
             clonedCharts.forEach((chart) => {
               if (chart instanceof HTMLElement) {
-                // Force visibility and proper sizing
+                // Force full visibility
                 chart.style.visibility = 'visible';
                 chart.style.opacity = '1';
                 chart.style.display = 'block';
                 chart.style.position = 'relative';
+                chart.style.width = elementWidth + 'px';
                 
                 // Ensure all child elements are visible
                 const allElements = chart.querySelectorAll('*');
@@ -221,20 +228,14 @@ export const generateStatisticsPDF = async (
                   if (el instanceof HTMLElement) {
                     el.style.visibility = 'visible';
                     el.style.opacity = '1';
-                    
-                    // Fix progress bars and badges
-                    if (el.className?.includes('bg-')) {
-                      const computedStyle = window.getComputedStyle(
-                        document.querySelector(`[data-chart="${chart.getAttribute('data-chart')}"]`)?.querySelector(`.${el.className.split(' ').find(c => c.startsWith('bg-'))}`) || el
-                      );
-                      el.style.backgroundColor = computedStyle.backgroundColor;
-                    }
                   }
                 });
               }
             });
           }
         });
+        
+        console.log('Canvas dimensions:', { width: canvas.width, height: canvas.height });
 
         if (canvas.width === 0 || canvas.height === 0) {
           throw new Error('Canvas has no dimensions');
@@ -242,25 +243,36 @@ export const generateStatisticsPDF = async (
 
         const imgData = canvas.toDataURL('image/png', 1.0);
         
-        // Calculate proper dimensions to fit page width while maintaining aspect ratio
-        const maxWidth = contentWidth;
-        const maxHeight = 110; // Maximum height for charts
+        // Calculate dimensions to fit within PDF page width
+        const pdfContentWidth = contentWidth;
+        const maxChartHeight = 120; // Maximum height for charts in PDF
+        
+        // Get the aspect ratio from the canvas
         const canvasAspectRatio = canvas.width / canvas.height;
         
-        let imgWidth = maxWidth;
-        let imgHeight = imgWidth / canvasAspectRatio;
+        // Calculate dimensions maintaining aspect ratio
+        let chartWidth = pdfContentWidth;
+        let chartHeight = chartWidth / canvasAspectRatio;
         
-        // If height exceeds max, adjust based on height
-        if (imgHeight > maxHeight) {
-          imgHeight = maxHeight;
-          imgWidth = imgHeight * canvasAspectRatio;
+        // If calculated height exceeds max, scale down based on height
+        if (chartHeight > maxChartHeight) {
+          chartHeight = maxChartHeight;
+          chartWidth = chartHeight * canvasAspectRatio;
         }
+        
+        // Center the chart horizontally on the page
+        const chartX = margin + (contentWidth - chartWidth) / 2;
+        
+        console.log('Adding chart to PDF:', { 
+          chartWidth, 
+          chartHeight, 
+          chartX, 
+          currentY,
+          aspectRatio: canvasAspectRatio 
+        });
 
-        // Always center the image on the page
-        const xPosition = margin + (contentWidth - imgWidth) / 2;
-
-        pdf.addImage(imgData, 'PNG', xPosition, currentY, imgWidth, imgHeight);
-        currentY += imgHeight + 15;
+        pdf.addImage(imgData, 'PNG', chartX, currentY, chartWidth, chartHeight);
+        currentY += chartHeight + 15;
         
         console.log(`Chart ${i + 1} captured successfully`);
         
