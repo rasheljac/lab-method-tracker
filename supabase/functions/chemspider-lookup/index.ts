@@ -58,7 +58,7 @@ serve(async (req) => {
     }
 
     // Wait a bit for results to be ready
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     // Get the search results
     const resultsResponse = await fetch(
@@ -71,8 +71,12 @@ serve(async (req) => {
     );
 
     if (!resultsResponse.ok) {
-      console.error('Failed to get results:', await resultsResponse.text());
-      throw new Error('Failed to get search results');
+      const errorText = await resultsResponse.text();
+      console.error('Failed to get results:', resultsResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to retrieve search results from ChemSpider' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     const results = await resultsResponse.json();
@@ -87,6 +91,8 @@ serve(async (req) => {
 
     // Get details for the first result
     const recordId = results.results[0];
+    console.log('Fetching details for record ID:', recordId);
+    
     const detailsResponse = await fetch(
       `https://api.rsc.org/compounds/v1/records/${recordId}/details`,
       {
@@ -97,32 +103,44 @@ serve(async (req) => {
     );
 
     if (!detailsResponse.ok) {
-      console.error('Failed to get details:', await detailsResponse.text());
-      throw new Error('Failed to get compound details');
+      const errorText = await detailsResponse.text();
+      console.error('Failed to get details:', detailsResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to retrieve compound details from ChemSpider' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     const details = await detailsResponse.json();
-    console.log('Details:', details);
+    console.log('Details:', JSON.stringify(details, null, 2));
 
     // Extract CAS number from external references
     let casNumber = null;
     if (details.externalReferences) {
+      console.log('External references found:', details.externalReferences.length);
       for (const ref of details.externalReferences) {
-        if (ref.source === 'CAS' && ref.sourceUrl) {
-          // Extract CAS number from URL or external ID
-          casNumber = ref.externalId || ref.sourceUrl.split('/').pop();
+        console.log('Checking reference:', ref.source, ref.externalId);
+        if (ref.source === 'CAS' && ref.externalId) {
+          casNumber = ref.externalId;
+          console.log('Found CAS number:', casNumber);
           break;
         }
       }
+    } else {
+      console.log('No external references found in details');
     }
 
+    const result = {
+      casNumber,
+      formula: details.formula,
+      molecularWeight: details.molecularWeight,
+      name: details.name,
+    };
+    
+    console.log('Returning result:', result);
+
     return new Response(
-      JSON.stringify({
-        casNumber,
-        formula: details.formula,
-        molecularWeight: details.molecularWeight,
-        name: details.name,
-      }),
+      JSON.stringify(result),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
