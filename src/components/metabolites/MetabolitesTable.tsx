@@ -18,9 +18,10 @@ interface MetabolitesTableProps {
   onEdit: (metabolite: any) => void;
   onDelete: (id: string) => void;
   onAdd: () => void;
+  searchQuery?: string;
 }
 
-export const MetabolitesTable = ({ onEdit, onDelete, onAdd }: MetabolitesTableProps) => {
+export const MetabolitesTable = ({ onEdit, onDelete, onAdd, searchQuery = '' }: MetabolitesTableProps) => {
   const [selectedMetabolite, setSelectedMetabolite] = useState<any>(null);
   const [showMetaboliteDetails, setShowMetaboliteDetails] = useState(false);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
@@ -45,6 +46,18 @@ export const MetabolitesTable = ({ onEdit, onDelete, onAdd }: MetabolitesTablePr
     },
   });
 
+  // Filter metabolites based on search query
+  const filteredMetabolites = metabolites.filter((metabolite) => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      metabolite.name?.toLowerCase().includes(query) ||
+      metabolite.formula?.toLowerCase().includes(query) ||
+      metabolite.cas_number?.toLowerCase().includes(query)
+    );
+  });
+
   const {
     paginatedData,
     currentPage,
@@ -55,7 +68,7 @@ export const MetabolitesTable = ({ onEdit, onDelete, onAdd }: MetabolitesTablePr
     totalItems,
     startItem,
     endItem
-  } = usePagination({ data: metabolites, itemsPerPage: 25 });
+  } = usePagination({ data: filteredMetabolites, itemsPerPage: 25 });
 
   const handleMetaboliteClick = (metabolite: any) => {
     setSelectedMetabolite(metabolite);

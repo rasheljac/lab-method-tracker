@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 
 interface MetaboliteFormProps {
   metabolite?: any;
@@ -28,8 +28,63 @@ export const MetaboliteForm = ({ metabolite, onClose }: MetaboliteFormProps) => 
   });
 
   const [loading, setLoading] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const handleChemSpiderLookup = async () => {
+    if (!formData.name && !formData.formula) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a metabolite name or formula first',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLookingUp(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('chemspider-lookup', {
+        body: {
+          name: formData.name,
+          formula: formData.formula,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast({
+          title: 'Not Found',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Autofill the form with ChemSpider data
+      setFormData({
+        ...formData,
+        cas_number: data.casNumber || formData.cas_number,
+        formula: data.formula || formData.formula,
+        molecular_weight: data.molecularWeight?.toString() || formData.molecular_weight,
+      });
+
+      toast({
+        title: 'Success',
+        description: 'Data retrieved from ChemSpider',
+      });
+    } catch (error: any) {
+      console.error('ChemSpider lookup error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to lookup compound in ChemSpider',
+        variant: 'destructive',
+      });
+    } finally {
+      setLookingUp(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,11 +184,26 @@ export const MetaboliteForm = ({ metabolite, onClose }: MetaboliteFormProps) => 
               </div>
               <div>
                 <Label htmlFor="cas_number">CAS Number</Label>
-                <Input
-                  id="cas_number"
-                  value={formData.cas_number}
-                  onChange={(e) => setFormData({ ...formData, cas_number: e.target.value })}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="cas_number"
+                    value={formData.cas_number}
+                    onChange={(e) => setFormData({ ...formData, cas_number: e.target.value })}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleChemSpiderLookup}
+                    disabled={lookingUp}
+                    className="shrink-0"
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    {lookingUp ? 'Looking up...' : 'Lookup'}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click Lookup to search ChemSpider and autofill data
+                </p>
               </div>
               <div>
                 <Label htmlFor="ionization_preference">Ionization Preference</Label>
