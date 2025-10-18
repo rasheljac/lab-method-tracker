@@ -25,38 +25,21 @@ export interface DashboardStats {
 // Helper function to wait for charts to be fully rendered
 const waitForChartsToRender = async (elements: HTMLElement[]): Promise<void> => {
   return new Promise((resolve) => {
-    let completedChecks = 0;
-    const totalChecks = elements.length;
-    
-    if (totalChecks === 0) {
+    if (elements.length === 0) {
       resolve();
       return;
     }
     
-    elements.forEach((element) => {
-      // Wait for SVG elements within charts to be rendered
-      const checkRendered = () => {
-        const svgElements = element.querySelectorAll('svg');
-        const hasContent = svgElements.length > 0 && 
-          Array.from(svgElements).some(svg => svg.children.length > 0);
-        
-        if (hasContent) {
-          completedChecks++;
-          if (completedChecks === totalChecks) {
-            // Add small delay to ensure complete rendering
-            setTimeout(resolve, 500);
-          }
-        } else {
-          // Retry after a short delay
-          setTimeout(checkRendered, 100);
-        }
-      };
+    // Wait for DOM to be fully rendered and styles to be applied
+    setTimeout(() => {
+      // Force a reflow to ensure all elements are properly rendered
+      elements.forEach((element) => {
+        void element.offsetHeight;
+      });
       
-      checkRendered();
-    });
-    
-    // Fallback timeout to prevent infinite waiting
-    setTimeout(resolve, 3000);
+      // Additional delay to ensure all animations and transitions are complete
+      setTimeout(resolve, 800);
+    }, 500);
   });
 };
 
@@ -77,13 +60,7 @@ const findChartElements = (): HTMLElement[] => {
     const elements = document.querySelectorAll(selector);
     elements.forEach(element => {
       if (element instanceof HTMLElement && !chartElements.includes(element)) {
-        // Make sure the element has actual chart content
-        const hasChartContent = element.querySelector('svg') || 
-                               element.querySelector('[class*="recharts"]') ||
-                               element.querySelector('canvas');
-        if (hasChartContent) {
-          chartElements.push(element);
-        }
+        chartElements.push(element);
       }
     });
   });
@@ -213,38 +190,49 @@ export const generateStatisticsPDF = async (
       try {
         console.log(`Capturing chart ${i + 1}/${chartsToCapture.length}`, chartElement);
         
-        // Improved chart capture settings with better SVG handling
+        // Improved chart capture settings with better rendering
         const canvas = await html2canvas(chartElement, {
           backgroundColor: '#ffffff',
-          scale: 2, // Higher scale for better quality
-          logging: false,
+          scale: 3, // Higher scale for better quality
+          logging: true,
           useCORS: true,
-          allowTaint: true,
-          foreignObjectRendering: true,
-          imageTimeout: 15000,
-          width: chartElement.offsetWidth,
-          height: chartElement.offsetHeight,
-          onclone: (clonedDoc) => {
-            // Ensure all chart elements are visible and properly sized
-            const clonedElement = clonedDoc.querySelector(`[data-testid="${chartElement.getAttribute('data-testid')}"]`) ||
-                                  clonedDoc.body.querySelector('*');
-            
-            if (clonedElement instanceof HTMLElement) {
-              clonedElement.style.overflow = 'visible';
-              clonedElement.style.height = 'auto';
-              clonedElement.style.minHeight = chartElement.offsetHeight + 'px';
-              clonedElement.style.width = chartElement.offsetWidth + 'px';
-              
-              // Ensure SVG elements are visible
-              const svgElements = clonedElement.querySelectorAll('svg');
-              svgElements.forEach(svg => {
-                if (svg instanceof SVGElement) {
-                  svg.style.overflow = 'visible';
-                  svg.setAttribute('width', chartElement.offsetWidth.toString());
-                  svg.setAttribute('height', chartElement.offsetHeight.toString());
-                }
-              });
-            }
+          allowTaint: false,
+          foreignObjectRendering: false,
+          imageTimeout: 0,
+          removeContainer: false,
+          width: chartElement.scrollWidth,
+          height: chartElement.scrollHeight,
+          windowWidth: chartElement.scrollWidth,
+          windowHeight: chartElement.scrollHeight,
+          onclone: (clonedDoc, clonedElement) => {
+            // Find the corresponding element in the cloned document
+            const clonedCharts = clonedDoc.querySelectorAll('[data-chart]');
+            clonedCharts.forEach((chart) => {
+              if (chart instanceof HTMLElement) {
+                // Force visibility and proper sizing
+                chart.style.visibility = 'visible';
+                chart.style.opacity = '1';
+                chart.style.display = 'block';
+                chart.style.position = 'relative';
+                
+                // Ensure all child elements are visible
+                const allElements = chart.querySelectorAll('*');
+                allElements.forEach((el) => {
+                  if (el instanceof HTMLElement) {
+                    el.style.visibility = 'visible';
+                    el.style.opacity = '1';
+                    
+                    // Fix progress bars and badges
+                    if (el.className?.includes('bg-')) {
+                      const computedStyle = window.getComputedStyle(
+                        document.querySelector(`[data-chart="${chart.getAttribute('data-chart')}"]`)?.querySelector(`.${el.className.split(' ').find(c => c.startsWith('bg-'))}`) || el
+                      );
+                      el.style.backgroundColor = computedStyle.backgroundColor;
+                    }
+                  }
+                });
+              }
+            });
           }
         });
 
@@ -252,11 +240,11 @@ export const generateStatisticsPDF = async (
           throw new Error('Canvas has no dimensions');
         }
 
-        const imgData = canvas.toDataURL('image/png', 0.95);
+        const imgData = canvas.toDataURL('image/png', 1.0);
         
         // Calculate proper dimensions to fit page width
         const maxWidth = contentWidth;
-        const maxHeight = 100; // Maximum height for charts
+        const maxHeight = 110; // Maximum height for charts
         const canvasAspectRatio = canvas.width / canvas.height;
         
         let imgWidth = maxWidth;
@@ -276,11 +264,13 @@ export const generateStatisticsPDF = async (
         
         console.log(`Chart ${i + 1} captured successfully`);
         
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error capturing chart ${i + 1}:`, error);
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'italic');
-        pdf.text(`Chart ${i + 1} could not be captured (${error.message || 'Unknown error'})`, margin, currentY);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(`[Chart ${i + 1}: Unable to capture - ${error.message || 'Unknown error'}]`, margin, currentY);
+        pdf.setTextColor(0, 0, 0);
         currentY += 15;
       }
     }

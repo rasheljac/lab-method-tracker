@@ -27,24 +27,40 @@ export const PdfExportButton = ({ stats, columns }: PdfExportButtonProps) => {
     setIsExporting(true);
 
     try {
+      // Wait a moment for any animations to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       // Get chart elements from the DOM
       const chartElements: HTMLElement[] = [];
       
-      // Look for chart containers in the dashboard
-      const dashboardCharts = document.querySelectorAll('[data-chart]');
-      dashboardCharts.forEach(chart => {
+      // Look for data-chart attribute (our main identifier)
+      const dataChartElements = document.querySelectorAll('[data-chart]');
+      console.log('Found elements with data-chart:', dataChartElements.length);
+      
+      dataChartElements.forEach(chart => {
         if (chart instanceof HTMLElement) {
+          // Force a repaint to ensure everything is rendered
+          void chart.offsetHeight;
           chartElements.push(chart);
         }
       });
 
-      // Look for the column lifetime chart specifically
-      const lifetimeChart = document.querySelector('.recharts-wrapper');
-      if (lifetimeChart instanceof HTMLElement) {
-        chartElements.push(lifetimeChart);
-      }
+      // Also look for recharts containers as fallback
+      const rechartsElements = document.querySelectorAll('.recharts-wrapper');
+      console.log('Found recharts elements:', rechartsElements.length);
+      
+      rechartsElements.forEach(chart => {
+        if (chart instanceof HTMLElement && !chartElements.includes(chart)) {
+          void chart.offsetHeight;
+          chartElements.push(chart);
+        }
+      });
 
-      console.log('Found chart elements:', chartElements.length);
+      console.log('Total chart elements to export:', chartElements.length);
+
+      if (chartElements.length === 0) {
+        console.warn('No chart elements found. Will generate PDF without charts.');
+      }
 
       await generateStatisticsPDF(stats, columns, chartElements);
       
