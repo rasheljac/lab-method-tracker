@@ -62,17 +62,19 @@ export const MetaboliteForm = ({ metabolite, onClose }: MetaboliteFormProps) => 
         return;
       }
 
-      // Autofill the form with ChemSpider data
+      // Autofill the form with ChemSpider data (SMILES instead of CAS)
       setFormData({
         ...formData,
-        cas_number: data.casNumber || formData.cas_number,
+        cas_number: data.smiles || formData.cas_number, // Store SMILES in cas_number field
         formula: data.formula || formData.formula,
         molecular_weight: data.molecularWeight?.toString() || formData.molecular_weight,
       });
 
       toast({
         title: 'Success',
-        description: 'Data retrieved from ChemSpider',
+        description: data.smiles 
+          ? 'SMILES notation retrieved from ChemSpider' 
+          : 'Data retrieved from ChemSpider (no SMILES found)',
       });
     } catch (error: any) {
       console.error('ChemSpider lookup error:', error);
@@ -183,12 +185,13 @@ export const MetaboliteForm = ({ metabolite, onClose }: MetaboliteFormProps) => 
                 />
               </div>
               <div>
-                <Label htmlFor="cas_number">CAS Number</Label>
+                <Label htmlFor="cas_number">SMILES Notation</Label>
                 <div className="flex gap-2">
                   <Input
                     id="cas_number"
                     value={formData.cas_number}
                     onChange={(e) => setFormData({ ...formData, cas_number: e.target.value })}
+                    placeholder="e.g., CC(=O)C(=O)C"
                   />
                   <Button
                     type="button"
@@ -198,11 +201,11 @@ export const MetaboliteForm = ({ metabolite, onClose }: MetaboliteFormProps) => 
                     className="shrink-0"
                   >
                     <Search className="h-4 w-4 mr-2" />
-                    {lookingUp ? 'Looking up...' : 'Lookup'}
+                    {lookingUp ? 'Looking up...' : 'Get SMILES'}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Click Lookup to search ChemSpider and autofill data
+                  Click Get SMILES to search ChemSpider and autofill SMILES notation
                 </p>
               </div>
               <div>

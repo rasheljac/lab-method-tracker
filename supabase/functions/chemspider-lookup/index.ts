@@ -151,24 +151,17 @@ serve(async (req) => {
     const details = await detailsResponse.json();
     console.log('Details:', JSON.stringify(details, null, 2));
 
-    // Extract CAS number from external references
-    let casNumber = null;
-    if (details.externalReferences) {
-      console.log('External references found:', details.externalReferences.length);
-      for (const ref of details.externalReferences) {
-        console.log('Checking reference:', ref.source, ref.externalId);
-        if (ref.source === 'CAS' && ref.externalId) {
-          casNumber = ref.externalId;
-          console.log('Found CAS number:', casNumber);
-          break;
-        }
-      }
+    // Extract SMILES from the compound details
+    let smiles = null;
+    if (details.smiles) {
+      smiles = details.smiles;
+      console.log('Found SMILES:', smiles);
     } else {
-      console.log('No external references found in details');
+      console.log('No SMILES found in details');
     }
 
     const result = {
-      casNumber,
+      smiles,
       formula: details.formula,
       molecularWeight: details.molecularWeight,
       name: details.name,
