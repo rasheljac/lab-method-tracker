@@ -20,12 +20,10 @@ serve(async (req) => {
 
     console.log('Looking up compound:', { name, formula });
 
-    // First, search for the compound
-    let searchQuery = name;
-    if (formula) {
-      searchQuery = formula; // Prefer formula if available
-    }
-
+    // Try searching by name first, then by formula if name fails
+    let searchQuery = name || formula;
+    
+    // Use the simpler filter/name endpoint with better parameters
     const searchResponse = await fetch(
       `https://api.rsc.org/compounds/v1/filter/name`,
       {
@@ -38,27 +36,66 @@ serve(async (req) => {
           name: searchQuery,
           orderBy: 'recordId',
           orderDirection: 'ascending',
+          page: 1,
+          size: 10
         }),
       }
     );
 
     if (!searchResponse.ok) {
-      console.error('ChemSpider search failed:', await searchResponse.text());
-      throw new Error('Failed to search ChemSpider');
+      const errorText = await searchResponse.text();
+      console.error('ChemSpider search failed:', searchResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to search ChemSpider' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     const searchData = await searchResponse.json();
     console.log('Search results:', searchData);
 
     if (!searchData.queryId) {
-      return new Response(
-        JSON.stringify({ error: 'No results found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
-      );
+      console.log('No queryId returned. Trying alternative search with formula...');
+      
+      // If name search failed and we have a formula, try formula search
+      if (formula && searchQuery !== formula) {
+        const formulaResponse = await fetch(
+          `https://api.rsc.org/compounds/v1/filter/formula`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': apiKey,
+            },
+            body: JSON.stringify({
+              formula: formula,
+              orderBy: 'recordId',
+              orderDirection: 'ascending'
+            }),
+          }
+        );
+
+        if (formulaResponse.ok) {
+          const formulaData = await formulaResponse.json();
+          console.log('Formula search results:', formulaData);
+          
+          if (formulaData.queryId) {
+            searchData.queryId = formulaData.queryId;
+          }
+        }
+      }
+      
+      if (!searchData.queryId) {
+        return new Response(
+          JSON.stringify({ error: 'No results found for this compound' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+        );
+      }
     }
 
-    // Wait a bit for results to be ready
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Wait longer for results to be ready (ChemSpider needs time to process)
+    console.log('Waiting for results to be processed...');
+    await new Promise(resolve => setTimeout(resolve, 4000));
 
     // Get the search results
     const resultsResponse = await fetch(
