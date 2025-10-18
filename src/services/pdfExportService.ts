@@ -242,7 +242,7 @@ export const generateStatisticsPDF = async (
 
         const imgData = canvas.toDataURL('image/png', 1.0);
         
-        // Calculate proper dimensions to fit page width
+        // Calculate proper dimensions to fit page width while maintaining aspect ratio
         const maxWidth = contentWidth;
         const maxHeight = 110; // Maximum height for charts
         const canvasAspectRatio = canvas.width / canvas.height;
@@ -256,7 +256,7 @@ export const generateStatisticsPDF = async (
           imgWidth = imgHeight * canvasAspectRatio;
         }
 
-        // Center the image if it's smaller than content width
+        // Always center the image on the page
         const xPosition = margin + (contentWidth - imgWidth) / 2;
 
         pdf.addImage(imgData, 'PNG', xPosition, currentY, imgWidth, imgHeight);
